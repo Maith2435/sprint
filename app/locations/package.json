@@ -1,0 +1,14 @@
+{
+  "name": "locations",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "ui5 build --clean-dest",
+    "start": "ui5 serve"
+  },
+  "devDependencies": {
+    "@ui5/cli": "^3.11.5",
+    "ui5-task-zipper": "^3"
+  },
+  "main": "webapp/index.html"
+}
