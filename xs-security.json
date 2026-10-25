@@ -1,0 +1,101 @@
+{
+  "xsappname": "sprint",
+  "tenant-mode": "dedicated",
+  "description": "Security profile for Rental Equipment Tracking & Condition Logging (RETCL)",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.YardWorker",
+      "description": "Yard Worker"
+    },
+    {
+      "name": "$XSAPPNAME.Dispatcher",
+      "description": "Dispatcher"
+    },
+    {
+      "name": "$XSAPPNAME.Technician",
+      "description": "Technician"
+    },
+    {
+      "name": "$XSAPPNAME.BillingClerk",
+      "description": "Billing Clerk"
+    },
+    {
+      "name": "$XSAPPNAME.Manager",
+      "description": "Manager"
+    },
+    {
+      "name": "$XSAPPNAME.Admin",
+      "description": "Administrator"
+    },
+    {
+      "name": "$XSAPPNAME.Auditor",
+      "description": "Auditor"
+    }
+  ],
+  "attributes": [
+    {
+      "name": "Plant",
+      "description": "Plant / Yard Location",
+      "valueType": "string"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "YardWorker",
+      "description": "Yard Worker Role",
+      "scope-references": [
+        "$XSAPPNAME.YardWorker"
+      ]
+    },
+    {
+      "name": "Dispatcher",
+      "description": "Dispatcher Role",
+      "scope-references": [
+        "$XSAPPNAME.Dispatcher"
+      ]
+    },
+    {
+      "name": "Technician",
+      "description": "Technician Role",
+      "scope-references": [
+        "$XSAPPNAME.Technician"
+      ]
+    },
+    {
+      "name": "BillingClerk",
+      "description": "Billing Clerk Role",
+      "scope-references": [
+        "$XSAPPNAME.BillingClerk"
+      ]
+    },
+    {
+      "name": "Manager",
+      "description": "Manager Role",
+      "scope-references": [
+        "$XSAPPNAME.Manager"
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Administrator Role",
+      "scope-references": [
+        "$XSAPPNAME.Admin"
+      ]
+    },
+    {
+      "name": "Auditor",
+      "description": "Auditor Role",
+      "scope-references": [
+        "$XSAPPNAME.Auditor"
+      ]
+    }
+  ],
+  "authorities-inheritance": false,
+  "oauth2-configuration": {
+    "redirect-uris": [
+      "https://*.hana.ondemand.com/**",
+      "https://*.applicationstudio.cloud.sap/**",
+      "http://localhost:*/**"
+    ]
+  }
+}

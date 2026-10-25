@@ -1,0 +1,255 @@
+_schema-version: "3.3.0"
+ID: sprint
+version: 1.0.0
+description: "Rental Equipment Tracking CAP Project"
+
+parameters:
+  enable-parallel-deployments: true
+  deploy_mode: html5-repo
+
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+        - node scripts/copy-ui.js
+
+modules:
+
+  - name: sprint-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      instances: 1
+      buildpack: nodejs_buildpack
+      memory: 512M
+    build-parameters:
+      builder: npm-ci
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: sprint-auth
+      - name: RETS
+      - name: sprint-destination
+
+  - name: sprint-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    requires:
+      - name: RETS
+
+  - name: sprintcustomermanagement
+    type: html5
+    path: app/customer-management
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist
+      supported-platforms: []
+
+  - name: sprintdamagechargeapproval
+    type: html5
+    path: app/damage-charge-approval
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist
+      supported-platforms: []
+
+  - name: sprintfleetoverview
+    type: html5
+    path: app/fleet-overview
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist
+      supported-platforms: []
+
+  - name: sprintinspections
+    type: html5
+    path: app/inspections
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist
+      supported-platforms: []
+
+  - name: sprintlocations
+    type: html5
+    path: app/locations
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist
+      supported-platforms: []
+
+  - name: sprintmaintenanceplanner
+    type: html5
+    path: app/maintenance-planner
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist
+      supported-platforms: []
+
+  - name: sprintrentals
+    type: html5
+    path: app/rentals
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist
+      supported-platforms: []
+
+  - name: sprintrepairjobs
+    type: html5
+    path: app/repair-jobs
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist
+      supported-platforms: []
+
+  - name: sprint
+    type: approuter.nodejs
+    path: .deploy/app-router
+    parameters:
+      keep-existing-routes: true
+      disk-quota: 256M
+      memory: 256M
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api
+          url: ~{srv-url}
+          forwardAuthToken: true
+      - name: sprint-auth
+      - name: sprint-destination
+      - name: sprint-html5-runtime
+    provides:
+      - name: app-api
+        properties:
+          app-protocol: ${protocol}
+          app-uri: ${default-uri}
+
+  - name: sprint-app-deployer
+    type: com.sap.application.content
+    path: gen
+    build-parameters:
+      build-result: app/
+      requires:
+        - name: sprintcustomermanagement
+          artifacts:
+            - customer-management.zip
+          target-path: app/
+
+        - name: sprintdamagechargeapproval
+          artifacts:
+            - damage-charge-approval.zip
+          target-path: app/
+
+        - name: sprintfleetoverview
+          artifacts:
+            - fleet-overview.zip
+          target-path: app/
+
+        - name: sprintinspections
+          artifacts:
+            - inspections.zip
+          target-path: app/
+
+        - name: sprintlocations
+          artifacts:
+            - locations.zip
+          target-path: app/
+
+        - name: sprintmaintenanceplanner
+          artifacts:
+            - maintenance-planner.zip
+          target-path: app/
+
+        - name: sprintrentals
+          artifacts:
+            - rentals.zip
+          target-path: app/
+
+        - name: sprintrepairjobs
+          artifacts:
+            - repair-jobs.zip
+          target-path: app/
+
+    requires:
+      - name: sprint-auth
+      - name: srv-api
+      - name: sprint-html5-repo-host
+        parameters:
+          content-target: true
+
+    parameters:
+      config:
+        destinations:
+          - Name: srv-api
+            URL: ~{srv-api/srv-url}
+            Authentication: NoAuthentication
+            Type: HTTP
+            ProxyType: Internet
+            ForwardAuthToken: true
+            DynamicDestination: true
+
+resources:
+
+  - name: sprint-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+      config:
+        xsappname: sprint-${org}-${space}
+        tenant-mode: dedicated
+
+  - name: RETS
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+
+  - name: sprint-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+
+  - name: sprint-html5-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+
+  - name: sprint-html5-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-runtime
