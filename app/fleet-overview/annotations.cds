@@ -103,6 +103,18 @@ annotate RentalService.Equipment with @(
                     Target: '@UI.FieldGroup#LocationTelematics'
                 }
             ]
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            ID: 'StatusTimelineFacet',
+            Label: 'Status Timeline',
+            Target: 'statusHistory/@UI.LineItem'
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            ID: 'LocationHistoryFacet',
+            Label: 'Location History',
+            Target: 'transfers/@UI.LineItem'
         }
     ],
     UI.FieldGroup #TechSpecs: {

@@ -34,6 +34,28 @@ annotate BillingService.RepairBills with @(
     ]
 );
 
+// Pricing engine: generate a repair bill from a recorded damage (FR-007)
+annotate BillingService.calculateDamageCharge with @(
+    Common.SideEffects: { TargetEntities: ['/BillingService.EntityContainer/RepairBills'] }
+);
+annotate BillingService.DamageRecords with {
+    ID @title: 'Damage Record' @Common.Text: damageType @Common.TextArrangement: #TextOnly;
+};
+annotate BillingService.calculateDamageCharge with (
+    damageId @title: 'Damage Record' @mandatory
+             @Common.ValueList: {
+                 CollectionPath: 'DamageRecords',
+                 Parameters: [
+                     { $Type: 'Common.ValueListParameterInOut', LocalDataProperty: damageId, ValueListProperty: 'ID' },
+                     { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'damageType' },
+                     { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'severity' },
+                     { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'area' },
+                     { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'repairEstimate' },
+                     { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'damageStatus' }
+                 ]
+             }
+);
+
 // Inspection review (FR-005, FR-014)
 annotate InspectionService.ConditionLogs with @(
     UI.Identification: [

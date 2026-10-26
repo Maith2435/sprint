@@ -39,36 +39,40 @@ export default class BillingService extends cds.ApplicationService {
             { code: 'Critical' }
         ]);
 
-        // Auto-generate invoice number and pre-populate defaults on new RepairBills draft
-        this.before(['CREATE', 'NEW'], 'RepairBills.drafts', async (req) => {
-            if (!req.data.invoiceNo) {
-                let maxNum = 1000;
+        // Next free invoice number (INV-2026-xxxx) across active bills and drafts
+        const nextInvoiceNo = async () => {
+            let maxNum = 1000;
+            try {
+                const activeBills = await cds.db.run(SELECT.from(RepairBills).columns('invoiceNo')) || [];
+                let draftBills = [];
                 try {
-                    const activeBills = await cds.db.run(SELECT.from(RepairBills).columns('invoiceNo')) || [];
-                    let draftBills = [];
-                    try {
-                        draftBills = await cds.db.run(SELECT.from('BillingService.RepairBills.drafts').columns('invoiceNo')) || [];
-                    } catch (e) {
-                        // draft table may be empty or error
-                    }
-                    const allBills = [...activeBills, ...draftBills];
-                    for (const b of allBills) {
-                        if (b?.invoiceNo) {
-                            // Only match legitimate standard invoice numbers like INV-2026-1003
-                            const match = String(b.invoiceNo).match(/^INV-(?:2026-)?(\d{4,6})$/);
-                            if (match) {
-                                const num = parseInt(match[1], 10);
-                                if (!isNaN(num) && num > maxNum) {
-                                    maxNum = num;
-                                }
+                    draftBills = await cds.db.run(SELECT.from('BillingService.RepairBills.drafts').columns('invoiceNo')) || [];
+                } catch (e) {
+                    // draft table may be empty or error
+                }
+                const allBills = [...activeBills, ...draftBills];
+                for (const b of allBills) {
+                    if (b?.invoiceNo) {
+                        // Only match legitimate standard invoice numbers like INV-2026-1003
+                        const match = String(b.invoiceNo).match(/^INV-(?:2026-)?(\d{4,6})$/);
+                        if (match) {
+                            const num = parseInt(match[1], 10);
+                            if (!isNaN(num) && num > maxNum) {
+                                maxNum = num;
                             }
                         }
                     }
-                } catch (err) {
-                    console.error('Error fetching max invoice number:', err);
                 }
-                const nextNum = maxNum + 1;
-                req.data.invoiceNo = `INV-2026-${nextNum}`;
+            } catch (err) {
+                console.error('Error fetching max invoice number:', err);
+            }
+            return `INV-2026-${maxNum + 1}`;
+        };
+
+        // Auto-generate invoice number and pre-populate defaults on new RepairBills draft
+        this.before(['CREATE', 'NEW'], 'RepairBills.drafts', async (req) => {
+            if (!req.data.invoiceNo) {
+                req.data.invoiceNo = await nextInvoiceNo();
             }
             if (!req.data.billDate) {
                 req.data.billDate = new Date().toISOString().split('T')[0];
@@ -304,6 +308,7 @@ export default class BillingService extends cds.ApplicationService {
             const billId = cds.utils.uuid();
             await INSERT.into(RepairBills).entries({
                 ID: billId,
+                invoiceNo: await nextInvoiceNo(),
                 rental_ID: rental.ID,
                 customer_ID: customerId,
                 damage_ID: damageId,
