@@ -1,9 +1,26 @@
+/*
+ * RENTAL SERVICE  (/rental)  - logic in rental-service.js
+ * Customers, depots, the equipment fleet and rental contracts (check-out / check-in / cancel).
+ * Used by the apps: Customers, Locations, Equipment Fleet, Rentals.
+ *
+ * How to read the annotations:
+ *   @path                  = URL of the OData service (e.g. /rental/Customers)
+ *   @requires              = who may call it at all (roles come from xs-security.json)
+ *   @restrict              = per entity: READ for some roles, '*' (create/update/delete) for others
+ *   @odata.draft.enabled   = edits are saved as a draft first, then activated with "Save" (Fiori standard)
+ *   @readonly              = can only be read through this service
+ *   actions { ... }        = bound actions (buttons on the object page); the unbound actions at the bottom
+ *                            do the actual work in the .js file (see srv/common/bound-actions.js)
+ *   @Common.SideEffects    = tells the UI to reload the object after the action
+ */
 using { RentalEquipmentTrackingApp as my } from '../../db/schema';
 
 @path: '/rental'
 @requires:'authenticated-user'
 service RentalService {
 
+    // ---------- Master data ----------
+    // Customers: Dispatcher maintains them, billing and auditors only read
     @odata.draft.enabled
     @restrict: [
         { grant: ['READ'], to: ['Dispatcher', 'BillingClerk', 'Manager', 'Admin', 'Auditor'] },
@@ -11,6 +28,7 @@ service RentalService {
     ]
     entity Customers as projection on my.Customers;
 
+    // Depots with the equipment parked there; "Assign Equipment" moves an asset to this depot
     @odata.draft.enabled
     @restrict: [
         { grant: ['READ'], to: ['Dispatcher', 'YardWorker', 'Technician', 'Manager', 'Admin', 'Auditor'] },
@@ -45,6 +63,7 @@ service RentalService {
         ) returns Locations;
     };
 
+    // The fleet. Yard workers may only run "Transfer"; everything else is Dispatcher / Manager / Admin
     @odata.draft.enabled
     @cds.redirection.target
     @restrict: [
@@ -69,6 +88,7 @@ service RentalService {
         ) returns Equipment;
     };
 
+    // Value help for rental items: only assets that are Available (reserved ones are filtered out in the .js)
     @readonly
     @restrict: [
         { grant: ['READ'], to: ['Dispatcher', 'YardWorker', 'Technician', 'BillingClerk', 'Manager', 'Admin', 'Auditor'] }
@@ -88,6 +108,8 @@ service RentalService {
         location
     } where currentStatus = 'Available';
 
+    // Rental contract with its items; buttons: Check Out, Check In, Cancel
+    // ---------- Rental contracts ----------
     @odata.draft.enabled
     @restrict: [
         { grant: ['READ'], to: ['Dispatcher', 'BillingClerk', 'Manager', 'Admin', 'Auditor'] },
@@ -112,6 +134,7 @@ service RentalService {
     ]
     entity RentalItems as projection on my.RentalItems;
 
+    // ---------- Read-only history shown on the object pages ----------
     @readonly
     @restrict: [
         { grant: ['READ'], to: ['Dispatcher', 'BillingClerk', 'Manager', 'Admin', 'Auditor'] }
@@ -154,6 +177,7 @@ service RentalService {
         key ID, equipment, technician, labourHours, actualCost, repairDetails, status, closedAt
     };
 
+    // Dropdown values for Location Type (filled in rental-service.js)
     @readonly
     @restrict: [
         { grant: ['READ'], to: ['Dispatcher', 'YardWorker', 'Manager', 'Admin', 'Auditor', 'Technician', 'BillingClerk'] }
@@ -163,7 +187,7 @@ service RentalService {
         name     : String(100);
     }
 
-    // Actions restricted by role (FRD: Dispatcher checks out; YardWorker transfers)
+    // ---------- Actions (business logic in rental-service.js) ----------
     @requires: ['Dispatcher', 'Manager', 'Admin']
     action checkOutRental(rentalId: UUID) returns Rentals;
     @requires: ['Dispatcher', 'Manager', 'Admin']

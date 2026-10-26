@@ -1,3 +1,10 @@
+/*
+ * DATA MODEL of the Rental Equipment Tracking & Condition Logging app.
+ * Every entity becomes one database table (SQLite locally, HANA on BTP).
+ *   cuid    = adds a generated UUID key "ID"
+ *   managed = adds createdAt / createdBy / modifiedAt / modifiedBy (filled automatically)
+ *   enum types below = fixed value lists (shown as dropdowns in the Fiori apps)
+ */
 using { cuid, managed } from '@sap/cds/common';
 
 namespace RentalEquipmentTrackingApp;
@@ -187,6 +194,7 @@ type Money : Decimal(12,2);
    MASTER DATA ENTITIES
    ========================================================================== */
 
+// Companies that rent equipment from us.
 entity Customers : cuid, managed {
     companyName   : String(100) @mandatory @title: 'Customer / Client' @Common.Label: 'Customer / Client';
     contactPerson : String(100) @title: 'Authorized Contact Person' @Common.Label: 'Authorized Contact Person';
@@ -197,6 +205,7 @@ entity Customers : cuid, managed {
                        on rentals.customer = $self;
 };
 
+// Depots / yards / sites where equipment is kept (plant code is generated in rental-service.js).
 entity Locations : cuid, managed {
     locationName : String(100) @mandatory;
     locationType : LocationType @mandatory;
@@ -209,6 +218,8 @@ entity Locations : cuid, managed {
                        on equipment.location = $self;
 };
 
+// One rentable asset (excavator, crane, ...). currentStatus drives the whole life cycle:
+// Available -> RentedOut -> (Returned) -> Damaged / InRepair -> Available.
 entity Equipment : cuid, managed {
     equipmentNo         : String(50) @readonly @title: 'Equipment No' @Common.Label: 'Equipment No';
     serialNumber        : String(100) @readonly @title: 'Serial Number' @Common.Label: 'Serial Number';
@@ -243,6 +254,7 @@ entity Equipment : cuid, managed {
                               on statusHistory.equipment = $self;
 };
 
+// Log of every move of an asset from one location to another.
 entity EquipmentTransfers : cuid, managed {
     equipment    : Association to Equipment @mandatory;
     fromLocation : Association to Locations;
@@ -251,6 +263,7 @@ entity EquipmentTransfers : cuid, managed {
     reason       : String(255);
 };
 
+// GPS / address snapshots of where an asset was at a point in time.
 entity LocationEvents : cuid, managed {
     equipment  : Association to Equipment @mandatory;
     latitude   : Decimal(9,6);
@@ -260,6 +273,7 @@ entity LocationEvents : cuid, managed {
     recordedBy : String(100);
 };
 
+// Audit trail: one row per equipment status change (written by srv/common/equipment-status.js).
 entity AssetStatusHistory : cuid {
     equipment : Association to Equipment @mandatory;
     oldStatus : EquipmentStatus;
@@ -273,6 +287,7 @@ entity AssetStatusHistory : cuid {
    TRANSACTIONAL: RENTALS & CONTRACTS
    ========================================================================== */
 
+// A rental contract with a customer. Items (the rented assets) are a composition: saved together with the contract.
 entity Rentals : cuid, managed {
     contractNo         : String(50) @mandatory @title: 'Contract Number' @Common.Label: 'Contract Number';
     customer           : Association to Customers @mandatory @title: 'Customer / Client' @Common.Label: 'Customer / Client';
@@ -289,6 +304,7 @@ entity Rentals : cuid, managed {
                             on conditionLogs.rental = $self;
 };
 
+// One asset on a rental contract, with its daily rate and dates.
 entity RentalItems : cuid, managed {
     rental          : Association to Rentals @mandatory @title: 'Rental Contract' @Common.Label: 'Rental Contract';
     equipment       : Association to Equipment @mandatory @title: 'Equipment Asset' @Common.Label: 'Equipment Asset';
@@ -298,6 +314,7 @@ entity RentalItems : cuid, managed {
     itemStatus      : ItemStatus default #Reserved @title: 'Item Status' @Common.Label: 'Item Status';
 };
 
+// Audit trail: one row per contract status change (Booked -> Active -> Returned ...).
 entity RentalStatusHistory : cuid {
     rental     : Association to Rentals @mandatory;
     oldStatus  : RentalStatus;
@@ -310,6 +327,7 @@ entity RentalStatusHistory : cuid {
    TRANSACTIONAL: INSPECTIONS & CONDITION LOGGING
    ========================================================================== */
 
+// An inspection report, done at check-out (dispatch) and check-in (return). Can be locked after submit.
 entity ConditionLogs : cuid, managed {
     equipment        : Association to Equipment @mandatory @title: 'Equipment Asset' @Common.Label: 'Equipment Asset';
     rental           : Association to Rentals @title: 'Rental Contract' @Common.Label: 'Rental Contract';
@@ -331,6 +349,7 @@ entity ConditionLogs : cuid, managed {
                            on photos.conditionLog = $self;
 };
 
+// One damage found during an inspection (area, type, severity, estimated repair cost).
 entity DamageRecords : cuid, managed {
     conditionLog   : Association to ConditionLogs @title: 'Inspection Reference' @Common.Label: 'Inspection Reference';
     area           : EquipmentArea @title: 'Equipment Area' @Common.Label: 'Equipment Area';
@@ -344,12 +363,12 @@ entity DamageRecords : cuid, managed {
     liableParty    : Association to Customers;
     preExisting    : Boolean default false;
     damageStatus   : DamageStatus @title: 'Damage Status' @Common.Label: 'Damage Status';
-    // photos         : Composition of many DamagePhotos
-    //                     on photos.damage = $self;
     repairBills    : Association to many RepairBills
                         on repairBills.damage = $self;
 };
 
+// Photo evidence. Belongs to an inspection, a damage or a repair bill. The image itself lives in Cloudinary (mediaUrl);
+// sha256 proves the file was not changed after upload.
 entity DamagePhotos : cuid {
     repairBill   : Association to RepairBills;
     damage       : Association to DamageRecords;
@@ -371,6 +390,7 @@ entity DamagePhotos : cuid {
    MAINTENANCE & WORKSHOP
    ========================================================================== */
 
+// Planned / preventive service of an asset.
 entity MaintenanceRecords : cuid, managed {
     equipment           : Association to Equipment @mandatory @title: 'Equipment Asset' @Common.Label: 'Equipment Asset';
     maintenanceType     : MaintenanceType @mandatory @title: 'Maintenance Type' @Common.Label: 'Maintenance Type';
@@ -382,6 +402,7 @@ entity MaintenanceRecords : cuid, managed {
     status              : MaintenanceStatus default #Planned @title: 'Maintenance Status' @Common.Label: 'Maintenance Status';
 };
 
+// Workshop job to fix a damage. Open/InProgress puts the asset InRepair; Completed makes it Available again.
 entity RepairJobs : cuid, managed {
     equipment        : Association to Equipment @mandatory @title: 'Equipment Asset' @Common.Label: 'Equipment Asset';
     damage           : Association to DamageRecords @title: 'Damage Reference' @Common.Label: 'Damage Reference';
@@ -399,6 +420,7 @@ entity RepairJobs : cuid, managed {
    FINANCIAL: REPAIR BILLING & PRICING RULES
    ========================================================================== */
 
+// Damage charge billed to the customer: parts + labour + painting = repairAmount, + 18% tax = totalAmount.
 entity RepairBills : cuid, managed {
     rental            : Association to Rentals @mandatory @title: 'Rental Contract' @Common.Label: 'Rental Contract';
     customer          : Association to Customers @mandatory @title: 'Customer / Client' @Common.Label: 'Customer / Client';
@@ -423,6 +445,7 @@ entity RepairBills : cuid, managed {
     invoiceNo        : String(50) @title: 'Invoice Number' @Common.Label: 'Invoice Number';
 };
 
+// Standard prices per damage type + severity, used by the "Calculate Damage Charge" action.
 entity PricingRules : cuid, managed {
     damageType       : String(50) @mandatory @title: 'Damage Category' @Common.Label: 'Damage Category';
     severity         : Severity @mandatory @title: 'Severity Level' @Common.Label: 'Severity Level';
@@ -438,6 +461,7 @@ entity PricingRules : cuid, managed {
    INTEGRATION & OUTBOX MONITORING
    ========================================================================== */
 
+// Outbox: messages sent to (simulated) SAP S/4HANA when an invoice is posted.
 entity IntegrationMessages : cuid, managed {
     messageType     : String(100) @mandatory; // e.g. Damage Billing Request
     reference       : String(100) @mandatory; // e.g. RENT-10001

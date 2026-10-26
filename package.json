@@ -14,7 +14,11 @@
     "@sap/cds-dk": "^10"
   },
   "scripts": {
-    "start": "cds-serve"
+    "start": "cds-serve",
+    "watch": "cds watch --profile hybrid",
+    "dev-router": "node scripts/dev-router.mjs",
+    "seed": "cds bind --exec -- node scripts/seed-data.js",
+    "seed:demo": "cds bind --exec -- node scripts/seed-demo.js"
   },
   "private": true,
   "cds": {
@@ -35,9 +39,7 @@
       "[production]": {
         "auth": "xsuaa"
       },
-      "destinations": true,
-      "html5-repo": true,
-      "workzone": true
+      "destinations": true
     }
   }
 }

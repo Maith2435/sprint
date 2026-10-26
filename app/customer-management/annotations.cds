@@ -4,13 +4,16 @@ using { RentalService } from '../../srv/rental-service/rental-service';
    0. CUSTOMER MANAGEMENT - MASTER DATA (STEP 1: CUSTOMER CREATION)
    ========================================================================== */
 
+// Customers: screen layout (list columns, filters, object page sections)
 annotate RentalService.Customers with @(
+    // title shown at the top of the object page (and singular / plural names)
     UI.HeaderInfo: {
         TypeName: 'Customer',
         TypeNamePlural: 'Corporate Customers',
         Title: { Value: companyName },
         Description: { Value: contactPerson }
     },
+    // filter fields in the filter bar of the list page
     UI.SelectionFields: [
         companyName,
         contactPerson,
@@ -18,6 +21,7 @@ annotate RentalService.Customers with @(
         phone,
         address
     ],
+    // columns of the table
     UI.LineItem: [
         { Value: companyName, Label: 'Company / Customer Name' },
         { Value: contactPerson, Label: 'Contact Person' },
@@ -26,6 +30,7 @@ annotate RentalService.Customers with @(
         { Value: address, Label: 'Address / City' },
         { Value: createdAt, Label: 'Registered On' }
     ],
+    // sections (tabs) of the object page
     UI.Facets: [
         {
             $Type: 'UI.CollectionFacet',
@@ -45,6 +50,7 @@ annotate RentalService.Customers with @(
             ]
         }
     ],
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #CustomerProfile: {
         Data: [
             { Value: companyName, Label: 'Company / Business Name' },
@@ -52,6 +58,7 @@ annotate RentalService.Customers with @(
             { Value: address, Label: 'Office / Yard Address' }
         ]
     },
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #ContactInfo: {
         Data: [
             { Value: email, Label: 'Email Address' },

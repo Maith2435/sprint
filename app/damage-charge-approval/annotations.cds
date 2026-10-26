@@ -4,18 +4,22 @@ using { BillingService } from '../../srv/billing-service/billing-service';
    2. BILLING SERVICE - DAMAGE CHARGE APPROVAL (FR-007, FR-021, FR-025)
    ========================================================================== */
 
+// RepairBills: screen layout (list columns, filters, object page sections)
 annotate BillingService.RepairBills with @(
+    // title shown at the top of the object page (and singular / plural names)
     UI.HeaderInfo: {
         TypeName: 'Repair Bill',
         TypeNamePlural: 'Repair Bills & Damage Charges',
         Title: { Value: invoiceNo }
     },
+    // filter fields in the filter bar of the list page
     UI.SelectionFields: [
         billingStatus,
         customer_ID,
         billDate,
         rental_ID
     ],
+    // columns of the table
     UI.LineItem: [
         { $Type: 'UI.DataFieldForAction', Action: 'BillingService.EntityContainer/calculateDamageCharge', Label: 'Generate Charge from Damage' },
         { Value: invoiceNo, Label: 'Invoice / Doc Ref' },
@@ -42,6 +46,7 @@ annotate BillingService.RepairBills with @(
         { Value: taxAmount, Label: 'Tax (₹)' },
         { Value: approvalReason, Label: 'Approval / Dispute Notes' }
     ],
+    // key figures shown in the object page header
     UI.HeaderFacets: [
         {
             $Type: 'UI.ReferenceFacet',
@@ -52,6 +57,7 @@ annotate BillingService.RepairBills with @(
             Target: '@UI.DataPoint#TotalBill'
         }
     ],
+    // a single highlighted value (used in the header)
     UI.DataPoint #BillStatus: {
         Value: billingStatus,
         Title: 'Approval Status',
@@ -64,10 +70,12 @@ annotate BillingService.RepairBills with @(
             billingStatus = 'Rejected' ? 1 : 0
         )
     },
+    // a single highlighted value (used in the header)
     UI.DataPoint #TotalBill: {
         Value: totalAmount,
         Title: 'Total Invoice Amount'
     },
+    // sections (tabs) of the object page
     UI.Facets: [
         {
             $Type: 'UI.ReferenceFacet',
@@ -85,18 +93,22 @@ annotate BillingService.RepairBills with @(
             Target: 'photos/@UI.LineItem'
         }
     ],
+    // when these fields change, the UI re-reads the listed fields (calculated by the backend)
     Common.SideEffects #CustomerSelect: {
         SourceProperties: [ customer_ID ],
         TargetProperties: [ 'rental_ID', 'equipment_ID' ]
     },
+    // when these fields change, the UI re-reads the listed fields (calculated by the backend)
     Common.SideEffects #RentalSelect: {
         SourceProperties: [ rental_ID ],
         TargetProperties: [ 'customer_ID', 'equipment_ID' ]
     },
+    // when these fields change, the UI re-reads the listed fields (calculated by the backend)
     Common.SideEffects #CostCalculation: {
         SourceProperties: [ partsCost, labourCost, paintingCost, taxAmount ],
         TargetProperties: [ 'repairAmount', 'taxAmount', 'totalAmount' ]
     },
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #DamageParticulars: {
         Label: 'Damage Particulars',
         Data: [
@@ -108,6 +120,7 @@ annotate BillingService.RepairBills with @(
             { Value: inspectionRef, Label: 'Inspection Reference' }
         ]
     },
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #BillDetails: {
         Data: [
             { Value: invoiceNo, Label: 'Invoice No' },
@@ -127,7 +140,9 @@ annotate BillingService.RepairBills with @(
     }
 );
 
+// ContractEquipment: screen layout (list columns, filters, object page sections)
 annotate BillingService.ContractEquipment with @(
+    // columns of the table
     UI.LineItem: [
         { Value: equipmentName, Label: 'Equipment Name' },
         { Value: equipmentNo, Label: 'Asset ID' },
@@ -137,6 +152,7 @@ annotate BillingService.ContractEquipment with @(
     ]
 );
 
+// RepairBills: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate BillingService.RepairBills with {
     invoiceNo         @title: 'Invoice Number'           @Common.Label: 'Invoice Number' @readonly;
     equipment         @title: 'Damaged Equipment'        @Common.Label: 'Damaged Equipment'
@@ -199,12 +215,14 @@ annotate BillingService.RepairBills with {
     approvalReason    @title: 'Approval Notes'           @Common.Label: 'Approval Notes';
 };
 
+// DamagePhotos: screen layout (list columns, filters, object page sections)
 annotate BillingService.DamagePhotos with @(
     Capabilities: {
         InsertRestrictions: { Insertable: true },
         DeleteRestrictions: { Deletable: true },
         UpdateRestrictions: { Updatable: true }
     },
+    // columns of the table
     UI.LineItem: [
         { Value: mediaUrl, Label: 'Photo Preview' },
         { Value: fileName, Label: 'Photo Filename' },
@@ -215,6 +233,7 @@ annotate BillingService.DamagePhotos with @(
     ]
 );
 
+// DamagePhotos: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate BillingService.DamagePhotos with {
     fileName  @title: 'Photo Filename' @Common.Label: 'Photo Filename';
     photoType @title: 'Evidence Type'  @Common.Label: 'Evidence Type' @Common.ValueListWithFixedValues: true;

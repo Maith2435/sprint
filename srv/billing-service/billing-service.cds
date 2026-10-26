@@ -1,9 +1,25 @@
+/*
+ * BILLING SERVICE  (/billing)  - logic in billing-service.js
+ * Damage charges for customers: calculate -> approve / adjust / reject / dispute -> post invoice to S/4HANA.
+ * Used by the apps: Damage Charge Approval, Pricing Rules.
+ *
+ * How to read the annotations:
+ *   @path                  = URL of the OData service (e.g. /rental/Customers)
+ *   @requires              = who may call it at all (roles come from xs-security.json)
+ *   @restrict              = per entity: READ for some roles, '*' (create/update/delete) for others
+ *   @odata.draft.enabled   = edits are saved as a draft first, then activated with "Save" (Fiori standard)
+ *   @readonly              = can only be read through this service
+ *   actions { ... }        = bound actions (buttons on the object page); the unbound actions at the bottom
+ *                            do the actual work in the .js file (see srv/common/bound-actions.js)
+ *   @Common.SideEffects    = tells the UI to reload the object after the action
+ */
 using { RentalEquipmentTrackingApp as my } from '../../db/schema';
 
 @path: '/billing'
 @requires:'authenticated-user'
 service BillingService {
 
+    // Damage charge (bill) with the approval workflow buttons
     @odata.draft.enabled
     @restrict: [
         { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor'] },
@@ -33,12 +49,14 @@ service BillingService {
         action post() returns RepairBills;
     };
 
+    // Photo evidence attached to a bill
     @restrict: [
         { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor', 'YardWorker', 'Technician'] },
         { grant: ['*'], to: ['BillingClerk', 'Manager', 'Admin', 'YardWorker', 'Technician'] }
     ]
     entity DamagePhotos as projection on my.DamagePhotos;
 
+    // Read-only lookups used by value helps and navigation
     @readonly
     @restrict: [
         { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor', 'YardWorker', 'Technician'] }
@@ -51,6 +69,7 @@ service BillingService {
     ]
     entity Equipment as projection on my.Equipment;
 
+    // Value help: the assets on a rental contract
     @readonly
     @restrict: [
         { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor', 'YardWorker', 'Technician', 'Dispatcher'] }
@@ -66,6 +85,7 @@ service BillingService {
         equipment.model as model
     };
 
+    // Price list per damage type + severity: billing reads it, only Manager / Admin change it
     @odata.draft.enabled
     @restrict: [
         { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor'] },
@@ -91,12 +111,14 @@ service BillingService {
     ]
     entity Customers as projection on my.Customers;
 
+    // Outbox of invoices sent to S/4HANA (simulated)
     @restrict: [
         { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor'] },
         { grant: ['*'], to: ['Admin'] }
     ]
     entity IntegrationMessages as projection on my.IntegrationMessages;
 
+    // Dropdown values (filled in billing-service.js)
     @readonly
     @restrict: [
         { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor', 'YardWorker', 'Technician', 'Dispatcher'] }
@@ -105,7 +127,7 @@ service BillingService {
         key code : String(10);
     };
 
-    // Pricing Engine & Billing Approval Workflows (FRD: BillingClerk approves and disputes; Manager all approvals)
+    // ---------- Actions (business logic in billing-service.js) ----------
     @requires: ['BillingClerk', 'Manager', 'Admin']
     action calculateDamageCharge(damageId: UUID) returns RepairBills;
     @requires: ['BillingClerk', 'Manager', 'Admin']

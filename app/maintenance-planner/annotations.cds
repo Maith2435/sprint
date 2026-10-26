@@ -4,13 +4,16 @@ using { MaintenanceService } from '../../srv/maintenance-service/maintenance-ser
    MAINTENANCE PLANNER - SCHEDULES & RECORDS
    ========================================================================== */
 
+// MaintenanceRecords: screen layout (list columns, filters, object page sections)
 annotate MaintenanceService.MaintenanceRecords with @(
+    // title shown at the top of the object page (and singular / plural names)
     UI.HeaderInfo: {
         TypeName: 'Maintenance Record',
         TypeNamePlural: 'Maintenance Records',
         Title: { Value: equipment_ID },
         Description: { Value: maintenanceType }
     },
+    // filter fields in the filter bar of the list page
     UI.SelectionFields: [
         maintenanceType,
         status,
@@ -18,6 +21,7 @@ annotate MaintenanceService.MaintenanceRecords with @(
         maintenanceDate,
         nextMaintenanceDate
     ],
+    // columns of the table
     UI.LineItem: [
         { Value: equipment.equipmentName, Label: 'Asset' },
         { Value: maintenanceType, Label: 'Service Type' },
@@ -35,6 +39,7 @@ annotate MaintenanceService.MaintenanceRecords with @(
         { Value: nextMaintenanceDate, Label: 'Next Due Date' },
         { Value: description, Label: 'Work Summary' }
     ],
+    // sections (tabs) of the object page
     UI.Facets: [
         {
             $Type: 'UI.ReferenceFacet',
@@ -42,6 +47,7 @@ annotate MaintenanceService.MaintenanceRecords with @(
             Target: '@UI.FieldGroup#MaintenanceDetails'
         }
     ],
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #MaintenanceDetails: {
         Data: [
             { Value: equipment_ID, Label: 'Equipment Asset' },
@@ -56,6 +62,7 @@ annotate MaintenanceService.MaintenanceRecords with @(
     }
 );
 
+// MaintenanceRecords: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate MaintenanceService.MaintenanceRecords with {
     equipment           @title: 'Equipment Asset'              @Common.Label: 'Equipment Asset'
                         @Common.Text: equipment.equipmentName  @Common.TextArrangement: #TextOnly

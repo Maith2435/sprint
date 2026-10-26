@@ -1,9 +1,25 @@
+/*
+ * MAINTENANCE SERVICE  (/maintenance)  - logic in maintenance-service.js
+ * Preventive maintenance and workshop repair jobs; releasing repaired assets back to Available.
+ * Used by the apps: Maintenance, Repair Jobs.
+ *
+ * How to read the annotations:
+ *   @path                  = URL of the OData service (e.g. /rental/Customers)
+ *   @requires              = who may call it at all (roles come from xs-security.json)
+ *   @restrict              = per entity: READ for some roles, '*' (create/update/delete) for others
+ *   @odata.draft.enabled   = edits are saved as a draft first, then activated with "Save" (Fiori standard)
+ *   @readonly              = can only be read through this service
+ *   actions { ... }        = bound actions (buttons on the object page); the unbound actions at the bottom
+ *                            do the actual work in the .js file (see srv/common/bound-actions.js)
+ *   @Common.SideEffects    = tells the UI to reload the object after the action
+ */
 using { RentalEquipmentTrackingApp as my } from '../../db/schema';
 
 @path: '/maintenance'
 @requires:'authenticated-user'
 service MaintenanceService {
 
+    // Planned service; "Complete" records the cost and the next service date
     @odata.draft.enabled
     @restrict: [
         { grant: ['READ'], to: ['Technician', 'Manager', 'Admin', 'Auditor'] },
@@ -17,6 +33,7 @@ service MaintenanceService {
         ) returns MaintenanceRecords;
     };
 
+    // Workshop repair; "Complete" logs the work, "Release Equipment" makes the asset Available again
     @odata.draft.enabled
     @restrict: [
         { grant: ['READ'], to: ['Technician', 'Manager', 'Admin', 'Auditor'] },
@@ -35,6 +52,7 @@ service MaintenanceService {
         ) returns RepairJobs;
     };
 
+    // Read-only lookups used by value helps
     @readonly
     @cds.redirection.target
     @restrict: [
@@ -42,6 +60,7 @@ service MaintenanceService {
     ]
     entity Equipment as projection on my.Equipment;
 
+    // Value help for repair jobs: only assets that need repair
     @readonly
     @restrict: [
         { grant: ['READ'], to: ['Technician', 'Dispatcher', 'Manager', 'Admin', 'Auditor'] }
@@ -62,7 +81,7 @@ service MaintenanceService {
     ]
     entity DamageRecords as projection on my.DamageRecords;
 
-    // Actions for Workshop & Technician Operations (FRD: Technician repairs and releases quarantine)
+    // ---------- Actions (business logic in maintenance-service.js) ----------
     @requires: ['Technician', 'Manager', 'Admin']
     action createRepairJob(damageId: UUID, technician: String) returns RepairJobs;
     @requires: ['Technician', 'Manager', 'Admin']

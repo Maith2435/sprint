@@ -1,20 +1,11 @@
-// Copies the UI (app/) into gen/srv/app so the CAP server serves the
-// launchpad (index.html, Component.js, fiori-auth.js, manifests) in production,
-// the same way `cds watch` serves app/ locally.
+/**
+ * Build step (called from mta.yaml): copies the UI (app/) into gen/srv/app.
+ * The CAP server serves that folder as static files, so in production the launchpad and the
+ * Fiori apps come from the same server and URL as the OData services - exactly like `cds watch` locally.
+ * The .cds annotation files are not copied: they are already compiled into the service model.
+ */
 import fs from 'node:fs';
-import path from 'node:path';
 
-const src = path.resolve('app');
-const dest = path.resolve('gen/srv/app');
-const skipDirs = new Set(['node_modules', 'dist', '.deploy']);
-const skipFiles = /\.cds$|^package(-lock)?\.json$|^ui5.*\.yaml$|^xs-app\.json$/;
-
-fs.rmSync(dest, { recursive: true, force: true });
-fs.cpSync(src, dest, {
-    recursive: true,
-    filter: (p) => {
-        const name = path.basename(p);
-        return fs.statSync(p).isDirectory() ? !skipDirs.has(name) : !skipFiles.test(name);
-    }
-});
-console.log(`[copy-ui] copied ${src} -> ${dest}`);
+fs.rmSync('gen/srv/app', { recursive: true, force: true });                          // start clean
+fs.cpSync('app', 'gen/srv/app', { recursive: true, filter: file => !file.endsWith('.cds') });
+console.log('[copy-ui] copied app/ -> gen/srv/app');

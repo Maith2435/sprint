@@ -4,12 +4,15 @@ using { RentalService } from '../../srv/rental-service/rental-service';
    1. RENTAL SERVICE - FLEET EQUIPMENT & ASSET DETAIL (FR-004, FR-010, FR-020)
    ========================================================================== */
 
+// Equipment: screen layout (list columns, filters, object page sections)
 annotate RentalService.Equipment with @(
+    // title shown at the top of the object page (and singular / plural names)
     UI.HeaderInfo: {
         TypeName: 'Equipment Asset',
         TypeNamePlural: 'Equipment Assets',
         Title: { Value: equipmentName }
     },
+    // filter fields in the filter bar of the list page
     UI.SelectionFields: [
         equipmentNo,
         category,
@@ -18,6 +21,7 @@ annotate RentalService.Equipment with @(
         currentGrade,
         location_ID
     ],
+    // columns of the table
     UI.LineItem: [
         { Value: equipmentNo, Label: 'Equipment No' },
         { Value: equipmentName, Label: 'Equipment Name' },
@@ -49,6 +53,7 @@ annotate RentalService.Equipment with @(
         { Value: manufacturer, Label: 'Manufacturer' },
         { Value: model, Label: 'Model' }
     ],
+    // key figures shown in the object page header
     UI.HeaderFacets: [
         {
             $Type: 'UI.ReferenceFacet',
@@ -63,6 +68,7 @@ annotate RentalService.Equipment with @(
             Target: '@UI.DataPoint#RentalRate'
         }
     ],
+    // a single highlighted value (used in the header)
     UI.DataPoint #Status: {
         Value: currentStatus,
         Title: 'Operational Status',
@@ -74,6 +80,7 @@ annotate RentalService.Equipment with @(
             currentStatus = 'Quarantined' ? 1 : 0
         )
     },
+    // a single highlighted value (used in the header)
     UI.DataPoint #Grade: {
         Value: currentGrade,
         Title: 'Condition Grade',
@@ -82,10 +89,12 @@ annotate RentalService.Equipment with @(
             currentGrade = 'B' ? 2 : 1
         )
     },
+    // a single highlighted value (used in the header)
     UI.DataPoint #RentalRate: {
         Value: rentalRatePerDay,
         Title: 'Daily Rate'
     },
+    // sections (tabs) of the object page
     UI.Facets: [
         {
             $Type: 'UI.CollectionFacet',
@@ -129,6 +138,7 @@ annotate RentalService.Equipment with @(
             Target: 'transfers/@UI.LineItem'
         }
     ],
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #TechSpecs: {
         Data: [
             { Value: equipmentNo, Label: 'Equipment No' },
@@ -142,6 +152,7 @@ annotate RentalService.Equipment with @(
             { Value: currentMeterReading, Label: 'Meter Reading (Hours)' }
         ]
     },
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #LocationTelematics: {
         Data: [
             { Value: location_ID, Label: 'Depot Location' },
@@ -151,6 +162,7 @@ annotate RentalService.Equipment with @(
     }
 );
 
+// Equipment: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate RentalService.Equipment with {
     equipmentNo         @readonly @title: 'Equipment No'        @Common.Label: 'Equipment No';
     serialNumber        @readonly @title: 'Serial Number'       @Common.Label: 'Serial Number';
@@ -180,7 +192,9 @@ annotate RentalService.Equipment with {
     longitude           @UI.Hidden: true;
 };
 
+// EquipmentTransfers: screen layout (list columns, filters, object page sections)
 annotate RentalService.EquipmentTransfers with @(
+    // columns of the table
     UI.LineItem: [
         { Value: transferDate, Label: 'Transfer Date' },
         { Value: fromLocation.locationName, Label: 'From Location' },
@@ -189,7 +203,9 @@ annotate RentalService.EquipmentTransfers with @(
     ]
 );
 
+// AssetStatusHistory: screen layout (list columns, filters, object page sections)
 annotate RentalService.AssetStatusHistory with @(
+    // columns of the table
     UI.LineItem: [
         { Value: changedAt, Label: 'Timestamp' },
         { Value: oldStatus, Label: 'Previous Status' },
@@ -201,6 +217,7 @@ annotate RentalService.AssetStatusHistory with @(
 
 // Inspection and repair history on the asset detail page (FR-014)
 annotate RentalService.ConditionLogs with @(
+    // columns of the table
     UI.LineItem: [
         { Value: inspectionDate, Label: 'Inspection Date' },
         { Value: inspectionType, Label: 'Type' },
@@ -214,13 +231,16 @@ annotate RentalService.ConditionLogs with @(
         { Value: inspectionStatus, Label: 'Review State' },
         { Value: notes, Label: 'Notes' }
     ],
+    // default sorting of the table
     UI.PresentationVariant: {
         SortOrder: [ { Property: inspectionDate, Descending: true } ],
         Visualizations: [ '@UI.LineItem' ]
     }
 );
 
+// RepairJobs: screen layout (list columns, filters, object page sections)
 annotate RentalService.RepairJobs with @(
+    // columns of the table
     UI.LineItem: [
         { Value: closedAt, Label: 'Completed At' },
         { Value: technician, Label: 'Technician' },
@@ -229,6 +249,7 @@ annotate RentalService.RepairJobs with @(
         { Value: actualCost, Label: 'Actual Cost (₹)' },
         { Value: repairDetails, Label: 'Work Performed' }
     ],
+    // default sorting of the table
     UI.PresentationVariant: {
         SortOrder: [ { Property: closedAt, Descending: true } ],
         Visualizations: [ '@UI.LineItem' ]

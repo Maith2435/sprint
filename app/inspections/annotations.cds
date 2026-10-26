@@ -4,7 +4,9 @@ using { InspectionService } from '../../srv/inspection-service/inspection-servic
    9. INSPECTION SERVICE - CONDITION LOGS & INSPECTIONS (FR-005, FR-006)
    ========================================================================== */
 
+// ContractEquipment: screen layout (list columns, filters, object page sections)
 annotate InspectionService.ContractEquipment with @(
+    // columns of the table
     UI.LineItem: [
         { Value: equipmentName, Label: 'Equipment Name' },
         { Value: equipmentNo, Label: 'Asset ID' },
@@ -14,16 +16,20 @@ annotate InspectionService.ContractEquipment with @(
     ]
 );
 
+// ConditionLogs: screen layout (list columns, filters, object page sections)
 annotate InspectionService.ConditionLogs with @(
     // Locked (immutable) inspections cannot be edited or deleted, so don't offer it
     UI.UpdateHidden: locked,
+    // hide the Delete button when this is true
     UI.DeleteHidden: locked,
+    // title shown at the top of the object page (and singular / plural names)
     UI.HeaderInfo: {
         TypeName: 'Inspection Log',
         TypeNamePlural: 'Condition Logs & Inspections',
         Title: { Value: inspectionType },
         Description: { Value: inspectionDate }
     },
+    // filter fields in the filter bar of the list page
     UI.SelectionFields: [
         inspectionType,
         conditionGrade,
@@ -31,6 +37,7 @@ annotate InspectionService.ConditionLogs with @(
         inspector,
         locked
     ],
+    // columns of the table
     UI.LineItem: [
         { Value: equipment.equipmentName, Label: 'Equipment Asset' },
         { Value: equipment.serialNumber, Label: 'Serial No' },
@@ -51,6 +58,7 @@ annotate InspectionService.ConditionLogs with @(
         { Value: customerAck, Label: 'Customer Signed' },
         { Value: locked, Label: 'Locked' }
     ],
+    // sections (tabs) of the object page
     UI.Facets: [
         {
             $Type: 'UI.ReferenceFacet',
@@ -63,14 +71,17 @@ annotate InspectionService.ConditionLogs with @(
             Target: 'photos/@UI.LineItem'
         }
     ],
+    // when these fields change, the UI re-reads the listed fields (calculated by the backend)
     Common.SideEffects #RentalChange: {
         SourceProperties: [ rental_ID ],
         TargetProperties: [ equipment_ID, inspectionType ]
     },
+    // when these fields change, the UI re-reads the listed fields (calculated by the backend)
     Common.SideEffects #EquipmentChange: {
         SourceProperties: [ equipment_ID ],
         TargetProperties: [ inspectionType ]
     },
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #InspectionFindings: {
         Data: [
             { Value: rental_ID, Label: 'Rental Contract' },
@@ -88,6 +99,7 @@ annotate InspectionService.ConditionLogs with @(
     }
 );
 
+// ConditionLogs: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate InspectionService.ConditionLogs with {
     equipment        @title: 'Equipment Asset'       @Common.Label: 'Equipment Asset'
                      @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextOnly
@@ -145,13 +157,16 @@ annotate InspectionService.ConditionLogs with {
    10. INSPECTION SERVICE - DAMAGE RECORDS & DAMAGE MANAGEMENT (FR-007)
    ========================================================================== */
 
+// DamageRecords: screen layout (list columns, filters, object page sections)
 annotate InspectionService.DamageRecords with @(
+    // title shown at the top of the object page (and singular / plural names)
     UI.HeaderInfo: {
         TypeName: 'Damage Incident',
         TypeNamePlural: 'Damage Incidents & Records',
         Title: { Value: damageType },
         Description: { Value: area }
     },
+    // filter fields in the filter bar of the list page
     UI.SelectionFields: [
         damageType,
         area,
@@ -161,6 +176,7 @@ annotate InspectionService.DamageRecords with @(
         billable,
         customerLiable
     ],
+    // columns of the table
     UI.LineItem: [
         { Value: damageType, Label: 'Damage Type' },
         { Value: area, Label: 'Equipment Area' },
@@ -186,6 +202,7 @@ annotate InspectionService.DamageRecords with @(
             )
         }
     ],
+    // sections (tabs) of the object page
     UI.Facets: [
         {
             $Type: 'UI.ReferenceFacet',
@@ -198,6 +215,7 @@ annotate InspectionService.DamageRecords with @(
             Target: 'photos/@UI.LineItem'
         }
     ],
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #DamageInfo: {
         Data: [
             { Value: conditionLog_ID, Label: 'Inspection Reference' },
@@ -214,6 +232,7 @@ annotate InspectionService.DamageRecords with @(
     }
 );
 
+// DamageRecords: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate InspectionService.DamageRecords with {
     conditionLog   @title: 'Inspection Reference'   @Common.Label: 'Inspection Reference' @Common.ValueList: {
         CollectionPath: 'ConditionLogs',
@@ -235,12 +254,14 @@ annotate InspectionService.DamageRecords with {
    11. DAMAGE PHOTOS - EVIDENCE GALLERY WITH INTEGRITY HASH (FR-009)
    ========================================================================== */
 
+// DamagePhotos: screen layout (list columns, filters, object page sections)
 annotate InspectionService.DamagePhotos with @(
     Capabilities: {
         InsertRestrictions: { Insertable: true },
         DeleteRestrictions: { Deletable: true },
         UpdateRestrictions: { Updatable: true }
     },
+    // columns of the table
     UI.LineItem: [
         { Value: mediaUrl, Label: 'Photo Preview' },
         { Value: fileName, Label: 'Photo Filename' },
@@ -253,6 +274,7 @@ annotate InspectionService.DamagePhotos with @(
     ]
 );
 
+// DamagePhotos: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate InspectionService.DamagePhotos with {
     fileName  @title: 'Photo Filename' @Common.Label: 'Photo Filename';
     photoType @title: 'Evidence Type'  @Common.Label: 'Evidence Type' @Common.ValueListWithFixedValues: true;

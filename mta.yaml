@@ -1,22 +1,26 @@
+# Multi-Target Application: what is deployed to SAP BTP Cloud Foundry, and how the parts connect.
+#
+#   Browser -> sprint (approuter: SAP login via XSUAA) -> sprint-srv (CAP backend + UI files) -> HANA (RETS)
+#
+# Build: mbt build      Deploy: cf deploy mta_archives/sprint_1.0.0.mtar
 _schema-version: "3.3.0"
 ID: sprint
 version: 1.0.0
-description: "Rental Equipment Tracking CAP Project"
+description: "Rental Equipment Tracking & Condition Logging (SAP CAP + Fiori)"
 
 parameters:
   enable-parallel-deployments: true
-  deploy_mode: html5-repo
 
 build-parameters:
   before-all:
     - builder: custom
       commands:
-        - npm ci
-        - npx cds build --production
-        - node scripts/copy-ui.js
+        - npm ci                          # install backend dependencies
+        - npx cds build --production      # compile CDS into gen/srv (backend) and gen/db (HANA artifacts)
+        - node scripts/copy-ui.js         # ship the UI (app/) with the backend; CAP serves it as static files
 
 modules:
-
+  # CAP backend: OData services, business logic, and the UI (index.html, launchpad, Fiori apps)
   - name: sprint-srv
     type: nodejs
     path: gen/srv
@@ -31,10 +35,11 @@ modules:
         properties:
           srv-url: ${default-url}
     requires:
-      - name: sprint-auth
-      - name: RETS
+      - name: sprint-auth             # XSUAA: validates the user's login token and roles
+      - name: RETS                    # HANA database (HDI container)
       - name: sprint-destination
 
+  # Creates / updates the database tables and views in HANA, then stops
   - name: sprint-db-deployer
     type: hdb
     path: gen/db
@@ -43,94 +48,7 @@ modules:
     requires:
       - name: RETS
 
-  - name: sprintcustomermanagement
-    type: html5
-    path: app/customer-management
-    build-parameters:
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      build-result: dist
-      supported-platforms: []
-
-  - name: sprintdamagechargeapproval
-    type: html5
-    path: app/damage-charge-approval
-    build-parameters:
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      build-result: dist
-      supported-platforms: []
-
-  - name: sprintfleetoverview
-    type: html5
-    path: app/fleet-overview
-    build-parameters:
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      build-result: dist
-      supported-platforms: []
-
-  - name: sprintinspections
-    type: html5
-    path: app/inspections
-    build-parameters:
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      build-result: dist
-      supported-platforms: []
-
-  - name: sprintlocations
-    type: html5
-    path: app/locations
-    build-parameters:
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      build-result: dist
-      supported-platforms: []
-
-  - name: sprintmaintenanceplanner
-    type: html5
-    path: app/maintenance-planner
-    build-parameters:
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      build-result: dist
-      supported-platforms: []
-
-  - name: sprintrentals
-    type: html5
-    path: app/rentals
-    build-parameters:
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      build-result: dist
-      supported-platforms: []
-
-  - name: sprintrepairjobs
-    type: html5
-    path: app/repair-jobs
-    build-parameters:
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      build-result: dist
-      supported-platforms: []
-
+  # Approuter: the public URL. Sends users through the SAP login and forwards requests to the backend.
   - name: sprint
     type: approuter.nodejs
     path: .deploy/app-router
@@ -144,82 +62,12 @@ modules:
         properties:
           name: srv-api
           url: ~{srv-url}
-          forwardAuthToken: true
+          forwardAuthToken: true      # pass the user's login token on to the backend
       - name: sprint-auth
       - name: sprint-destination
-      - name: sprint-html5-runtime
-    provides:
-      - name: app-api
-        properties:
-          app-protocol: ${protocol}
-          app-uri: ${default-uri}
-
-  - name: sprint-app-deployer
-    type: com.sap.application.content
-    path: gen
-    build-parameters:
-      build-result: app/
-      requires:
-        - name: sprintcustomermanagement
-          artifacts:
-            - customer-management.zip
-          target-path: app/
-
-        - name: sprintdamagechargeapproval
-          artifacts:
-            - damage-charge-approval.zip
-          target-path: app/
-
-        - name: sprintfleetoverview
-          artifacts:
-            - fleet-overview.zip
-          target-path: app/
-
-        - name: sprintinspections
-          artifacts:
-            - inspections.zip
-          target-path: app/
-
-        - name: sprintlocations
-          artifacts:
-            - locations.zip
-          target-path: app/
-
-        - name: sprintmaintenanceplanner
-          artifacts:
-            - maintenance-planner.zip
-          target-path: app/
-
-        - name: sprintrentals
-          artifacts:
-            - rentals.zip
-          target-path: app/
-
-        - name: sprintrepairjobs
-          artifacts:
-            - repair-jobs.zip
-          target-path: app/
-
-    requires:
-      - name: sprint-auth
-      - name: srv-api
-      - name: sprint-html5-repo-host
-        parameters:
-          content-target: true
-
-    parameters:
-      config:
-        destinations:
-          - Name: srv-api
-            URL: ~{srv-api/srv-url}
-            Authentication: NoAuthentication
-            Type: HTTP
-            ProxyType: Internet
-            ForwardAuthToken: true
-            DynamicDestination: true
 
 resources:
-
+  # Login and roles (role templates in xs-security.json)
   - name: sprint-auth
     type: org.cloudfoundry.managed-service
     parameters:
@@ -230,6 +78,7 @@ resources:
         xsappname: sprint-${org}-${space}
         tenant-mode: dedicated
 
+  # HANA HDI container holding the application's tables
   - name: RETS
     type: com.sap.xs.hdi-container
     parameters:
@@ -241,15 +90,3 @@ resources:
     parameters:
       service: destination
       service-plan: lite
-
-  - name: sprint-html5-repo-host
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: html5-apps-repo
-      service-plan: app-host
-
-  - name: sprint-html5-runtime
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: html5-apps-repo
-      service-plan: app-runtime

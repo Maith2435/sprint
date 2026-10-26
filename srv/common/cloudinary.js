@@ -1,155 +1,48 @@
+import 'dotenv/config';                                                         // loads .env locally (no-op on BTP)
 import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'node:crypto';
 
-import fs from 'node:fs';
-import path from 'node:path';
-
-// Load .env file automatically if present
-try {
-    const envPath = path.resolve(process.cwd(), '.env');
-    if (fs.existsSync(envPath)) {
-        const content = fs.readFileSync(envPath, 'utf8');
-        content.split('\n').forEach(line => {
-            const trimmed = line.trim();
-            if (trimmed && !trimmed.startsWith('#')) {
-                const eqIdx = trimmed.indexOf('=');
-                if (eqIdx > 0) {
-                    const key = trimmed.substring(0, eqIdx).trim();
-                    const val = trimmed.substring(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
-                    if (!process.env[key]) {
-                        process.env[key] = val;
-                    }
-                }
-            }
-        });
-    }
-} catch (e) {
-    // Ignore .env read error
-}
-
-// Extract and parse Cloudinary credentials
-let cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-let apiKey = process.env.CLOUDINARY_API_KEY;
-let apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-// Option A from .env.example: cloudinary://<api_key>:<api_secret>@<cloud_name>
-if (process.env.CLOUDINARY_URL && !(cloudName && apiKey && apiSecret)) {
-    try {
-        const parsed = new URL(process.env.CLOUDINARY_URL);
-        cloudName = cloudName || parsed.hostname;
-        apiKey = apiKey || decodeURIComponent(parsed.username);
-        apiSecret = apiSecret || decodeURIComponent(parsed.password);
-    } catch (e) {
-        console.error('[Cloudinary] Could not parse CLOUDINARY_URL:', e.message);
-    }
-}
-
-const isConfigured = Boolean(cloudName && apiKey && apiSecret);
-
-if (isConfigured) {
-    cloudinary.config({
-        cloud_name: cloudName,
-        api_key: apiKey,
-        api_secret: apiSecret,
-        secure: true
-    });
-    console.log(`[Cloudinary] Initialized with Cloudinary account: ${cloudName}`);
-} else {
-    console.log('[Cloudinary] Notice: Incomplete Cloudinary credentials. Fallback handler will store verifiable evidence hashes.');
-}
-
+/**
+ * Photo evidence storage (FR-018/019, FRD "Evidence Integrity").
+ * Images go to Cloudinary (stand-in for BTP Object Store, which a trial account doesn't have).
+ * Credentials come from the environment: either CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud>
+ * (read by the SDK automatically) or CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET.
+ */
+cloudinary.config({
+    secure: true,                                                               // always return https URLs
+    ...(process.env.CLOUDINARY_CLOUD_NAME && {                                  // separate variables, if used
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+    })
+});
+const { cloud_name, api_key, api_secret } = cloudinary.config();
+const isConfigured = Boolean(cloud_name && api_key && api_secret);
+console.log(isConfigured ? `[Cloudinary] Using account ${cloud_name}` : '[Cloudinary] Not configured: only SHA-256 hashes will be stored');
 
 /**
- * Compute cryptographic SHA-256 hash of image data (Buffer or Base64/DataURI).
- * Satisfies SAP Sprint FR-009 Photographic Evidence Tamper-Proof Requirement.
+ * Stores an evidence photo and returns its URL plus a SHA-256 fingerprint.
+ * The hash proves later that the image was not altered (tamper-proof evidence).
+ *
+ * @param {string} imageBase64  data URI ("data:image/jpeg;base64,...") or plain base64
+ * @param {string} fileName     original file name
+ * @returns {{ mediaUrl: string|null, publicId: string|null, sha256: string }}
  */
-export function computeSha256(input) {
-    let buffer;
-    let mimeType = 'image/jpeg';
-
-    if (Buffer.isBuffer(input)) {
-        buffer = input;
-    } else if (typeof input === 'string') {
-        if (input.startsWith('data:')) {
-            const matches = input.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-            if (matches && matches.length === 3) {
-                mimeType = matches[1];
-                buffer = Buffer.from(matches[2], 'base64');
-            } else {
-                buffer = Buffer.from(input, 'base64');
-            }
-        } else {
-            buffer = Buffer.from(input, 'base64');
-        }
-    } else {
-        throw new Error('Unsupported image input type for SHA-256 calculation');
-    }
-
-    const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
-    return { sha256, buffer, mimeType };
-}
-
-/**
- * Upload image to Cloudinary CDN and return secure media URL, public ID and SHA-256 hash.
- */
-export async function uploadEvidencePhoto({
-    imageBase64,
-    fileName = 'evidence.jpg',
-    folder = 'rental_damage_evidence',
-    tags = ['sap_rental_sprint', 'damage_evidence']
-}) {
-    if (!imageBase64) {
-        throw new Error('No image data provided for upload');
-    }
-
-    // 1. Calculate cryptographically secure SHA-256 integrity hash
-    const { sha256, buffer, mimeType } = computeSha256(imageBase64);
-
-    // Format Data URI for Cloudinary uploader
-    const dataUri = imageBase64.startsWith('data:') 
-        ? imageBase64 
-        : `data:${mimeType};base64,${buffer.toString('base64')}`;
-
-    // 2. Check if Cloudinary is configured
-    const isConfigured = Boolean(
-        process.env.CLOUDINARY_URL || 
-        (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY)
-    );
-
+export async function uploadEvidencePhoto(imageBase64, fileName) {
+    const [, mimeType = 'image/jpeg', data = imageBase64] = imageBase64.match(/^data:([^;]+);base64,(.+)$/) || []; // split data URI
+    const buffer = Buffer.from(data, 'base64');                                 // raw image bytes
+    const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');    // tamper-proof fingerprint
     if (isConfigured) {
         try {
-            const uploadResponse = await cloudinary.uploader.upload(dataUri, {
-                folder,
-                resource_type: 'image',
-                tags,
-                context: {
-                    sha256,
-                    original_filename: fileName
-                }
+            const result = await cloudinary.uploader.upload(`data:${mimeType};base64,${data}`, {
+                folder: 'rental_damage_evidence',
+                context: { sha256, original_filename: fileName }                  // hash travels with the image
             });
-
-            console.log(`[Cloudinary] Successfully uploaded ${fileName} -> ${uploadResponse.secure_url} (SHA256: ${sha256.substring(0, 12)}...)`);
-
-            return {
-                mediaUrl: uploadResponse.secure_url,
-                publicId: uploadResponse.public_id,
-                sha256,
-                format: uploadResponse.format,
-                isCloudinary: true
-            };
-        } catch (cloudErr) {
-            console.error('[Cloudinary] Upload failed with provider, falling back to secure data URL:', cloudErr.message);
+            return { mediaUrl: result.secure_url, publicId: result.public_id, sha256 };
+        } catch (err) {
+            console.error('[Cloudinary] Upload failed, keeping the hash only:', err.message);
         }
     }
-
-    // Fallback if Cloudinary credentials are not set or provider error occurs:
-    // keep the SHA-256 evidence hash; only keep the image inline if it fits the mediaUrl column (String(500))
-    const mockPublicId = `evidence_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    return {
-        mediaUrl: dataUri.length <= 500 ? dataUri : null,
-        publicId: mockPublicId,
-        sha256,
-        format: mimeType.split('/')[1] || 'jpeg',
-        isCloudinary: false
-    };
+    // Not configured or upload failed: keep the evidence hash; the image URL column can't hold a full image
+    return { mediaUrl: null, publicId: null, sha256 };
 }

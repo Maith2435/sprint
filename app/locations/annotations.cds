@@ -5,7 +5,9 @@ using { RentalService } from '../../srv/rental-service/rental-service';
    8. LOCATIONS & YARDS - MASTER DATA (FR-004, FR-020)
    ========================================================================== */
 
+// Locations: screen layout (list columns, filters, object page sections)
 annotate RentalService.Locations with @(
+    // which related tables may be opened from here
     Capabilities.NavigationRestrictions: {
         RestrictedProperties: [
             {
@@ -16,6 +18,7 @@ annotate RentalService.Locations with @(
             }
         ]
     },
+    // action buttons in the object page header
     UI.Identification: [
         {
             $Type: 'UI.DataFieldForAction',
@@ -23,16 +26,19 @@ annotate RentalService.Locations with @(
             Label: 'Assign Equipment'
         }
     ],
+    // title shown at the top of the object page (and singular / plural names)
     UI.HeaderInfo: {
         TypeName: 'Location',
         TypeNamePlural: 'Locations',
         Title: { Value: locationName }
     },
+    // filter fields in the filter bar of the list page
     UI.SelectionFields: [
         locationName,
         locationType,
         city
     ],
+    // columns of the table
     UI.LineItem: [
         { Value: locationName, Label: 'Location Name' },
         { Value: plant, Label: 'Plant Code' },
@@ -42,6 +48,7 @@ annotate RentalService.Locations with @(
         { Value: latitude, Label: 'Latitude' },
         { Value: longitude, Label: 'Longitude' }
     ],
+    // sections (tabs) of the object page
     UI.Facets: [
         {
             $Type: 'UI.ReferenceFacet',
@@ -55,6 +62,7 @@ annotate RentalService.Locations with @(
             ![@UI.Hidden]: {$edmJson: {$Not: {$Path: 'IsActiveEntity'}}}
         }
     ],
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #LocationInfo: {
         Data: [
             { Value: locationName, Label: 'Location Name' },
@@ -68,6 +76,7 @@ annotate RentalService.Locations with @(
     }
 );
 
+// Locations: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate RentalService.Locations with {
     locationName @mandatory @title: 'Location Name' @Common.Label: 'Location Name';
     plant        @readonly  @title: 'Plant Code'    @Common.Label: 'Plant Code';

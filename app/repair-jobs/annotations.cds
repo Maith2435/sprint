@@ -4,18 +4,22 @@ using { MaintenanceService } from '../../srv/maintenance-service/maintenance-ser
    4. MAINTENANCE SERVICE - WORKSHOP & REPAIRS (FR-012, FR-013)
    ========================================================================== */
 
+// RepairJobs: screen layout (list columns, filters, object page sections)
 annotate MaintenanceService.RepairJobs with @(
+    // title shown at the top of the object page (and singular / plural names)
     UI.HeaderInfo: {
         TypeName: 'Workshop Repair Job',
         TypeNamePlural: 'Workshop Repair Jobs',
         Title: { Value: equipment_ID },
         Description: { Value: status }
     },
+    // filter fields in the filter bar of the list page
     UI.SelectionFields: [
         status,
         technician,
         equipment_ID
     ],
+    // columns of the table
     UI.LineItem: [
         { Value: equipment.equipmentName, Label: 'Asset' },
         { Value: equipment.serialNumber, Label: 'Serial' },
@@ -35,6 +39,7 @@ annotate MaintenanceService.RepairJobs with @(
         { Value: afterPhotoUrl, Label: 'After Photo' },
         { Value: closedAt, Label: 'Completed At' }
     ],
+    // sections (tabs) of the object page
     UI.Facets: [
         {
             $Type: 'UI.ReferenceFacet',
@@ -42,10 +47,12 @@ annotate MaintenanceService.RepairJobs with @(
             Target: '@UI.FieldGroup#RepairDetails'
         }
     ],
+    // when these fields change, the UI re-reads the listed fields (calculated by the backend)
     Common.SideEffects #DamageSelected: {
         SourceProperties: [ damage_ID ],
         TargetProperties: [ equipment_ID, actualCost ]
     },
+    // a group of fields, shown inside one of the sections above
     UI.FieldGroup #RepairDetails: {
         Data: [
             { Value: equipment_ID, Label: 'Equipment Asset' },
@@ -62,6 +69,7 @@ annotate MaintenanceService.RepairJobs with @(
     }
 );
 
+// RepairJobs: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate MaintenanceService.RepairJobs with {
     equipment      @title: 'Equipment Asset'          @Common.Label: 'Equipment Asset'
                    @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextOnly
@@ -94,6 +102,7 @@ annotate MaintenanceService.RepairJobs with {
     closedAt       @title: 'Completion Timestamp'     @Common.Label: 'Completion Timestamp';
 };
 
+// DamagedEquipment: field labels, value helps (dropdowns) and read-only / mandatory rules
 annotate MaintenanceService.DamagedEquipment with {
     equipmentName @title: 'Equipment Name'     @Common.Label: 'Equipment Name';
     serialNumber  @title: 'Serial Number'      @Common.Label: 'Serial Number';

@@ -1,146 +1,43 @@
 <!DOCTYPE html>
+<!--
+  Single entry page of the UI.
+    /index.html            -> the launchpad (app/launchpad/main.js)
+    /index.html?app=<id>   -> one of the 8 Fiori Elements apps (e.g. ?app=rentals), with our shell bar on top
+-->
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rental Equipment Tracking</title>
-    <script src="/fiori-auth.js"></script>
+    <link rel="stylesheet" href="/shared/styles.css">
+    <script src="/shared/config.js"></script>          <!-- app catalogue + role permissions -->
+    <script src="/shared/session.js"></script>         <!-- signed-in SAP user, CSRF-safe requests -->
+    <script src="/shared/app-shell.js"></script>       <!-- shell bar + access check around each app -->
+    <script src="/shared/photo-evidence.js"></script>  <!-- photo upload dialog -->
     <script>
-        (function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const currentAppId = urlParams.get('app');
-            const APP_REGISTRY = {
-                'customer-management': { title: 'Customer Management', ns: 'retcl.customermanagement', path: '/customer-management/webapp' },
-                'damage-charge-approval': { title: 'Damage Charge Approval', ns: 'retcl.damagechargeapproval', path: '/damage-charge-approval/webapp' },
-                'fleet-overview': { title: 'Fleet Overview & Asset Detail', ns: 'retcl.fleetoverview', path: '/fleet-overview/webapp' },
-                'inspections': { title: 'Condition Logging & Inspections', ns: 'retcl.inspections', path: '/inspections/webapp' },
-                'locations': { title: 'Depot & Yard Locations', ns: 'retcl.locations', path: '/locations/webapp' },
-                'maintenance-planner': { title: 'Maintenance Planner & Schedules', ns: 'retcl.maintenanceplanner', path: '/maintenance-planner/webapp' },
-                'rentals': { title: 'Rental Contracts & Allocations', ns: 'retcl.rentals', path: '/rentals/webapp' },
-                'repair-jobs': { title: 'Workshop Repair Jobs', ns: 'retcl.repairjobs', path: '/repair-jobs/webapp' }
-            };
-            const appCfg = currentAppId ? APP_REGISTRY[currentAppId] : null;
-            window.__FIORI_APP_CONFIG = appCfg;
-            window.__FIORI_CURRENT_APP_ID = currentAppId;
-            window.__FIORI_APP_REGISTRY = APP_REGISTRY;
-
-            // Follow the operating system's light / dark preference
-            const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const theme = dark ? 'sap_horizon_dark' : 'sap_horizon';
-
-            // Sub-app mode loads the Fiori Elements component; otherwise the launchpad module
-            const resRoots = appCfg
-                ? JSON.stringify({ [appCfg.ns]: appCfg.path })
-                : JSON.stringify({ 'retcl.launchpad': './launchpad' });
-            const onInit = appCfg ? 'module:sap/ui/core/ComponentSupport' : 'module:retcl/launchpad/main';
-            const libs = appCfg ? '' : 'data-sap-ui-libs="sap.m,sap.f,sap.ui.layout,sap.suite.ui.microchart" ';
-            if (appCfg) document.title = appCfg.title;
-            document.write(
-                '<script ' +
-                'id="sap-ui-bootstrap" ' +
-                'src="https://ui5.sap.com/resources/sap-ui-core.js" ' +
-                'data-sap-ui-theme="' + theme + '" ' +
-                libs +
-                'data-sap-ui-resourceroots=\'' + resRoots + '\' ' +
-                'data-sap-ui-onInit="' + onInit + '" ' +
-                'data-sap-ui-compatVersion="edge" ' +
-                'data-sap-ui-async="true" ' +
-                'data-sap-ui-frameOptions="trusted">' +
-                '<\/script>'
-            );
-        })();
+        // Decide what to show, then load SAP UI5 (SAPUI5 CDN, Horizon theme following the OS light/dark setting)
+        const appId = new URLSearchParams(location.search).get('app');
+        const app = window.RETCL.apps[appId];                                 // undefined = launchpad
+        const theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'sap_horizon_dark' : 'sap_horizon';
+        const ui5 = app
+            ? { roots: { [app.ns]: `/${appId}/webapp` }, onInit: 'module:sap/ui/core/ComponentSupport', libs: '' }   // a Fiori app
+            : { roots: { 'retcl.launchpad': './launchpad' }, onInit: 'module:retcl/launchpad/main',
+                libs: 'sap.m,sap.f,sap.ui.layout,sap.suite.ui.microchart' };                                         // the launchpad
+        if (app) document.title = app.fullTitle;
+        document.write(`<script id="sap-ui-bootstrap" src="https://ui5.sap.com/resources/sap-ui-core.js"
+            data-sap-ui-theme="${theme}" ${ui5.libs && `data-sap-ui-libs="${ui5.libs}"`}
+            data-sap-ui-resourceroots='${JSON.stringify(ui5.roots)}' data-sap-ui-on-init="${ui5.onInit}"
+            data-sap-ui-compat-version="edge" data-sap-ui-async="true" data-sap-ui-frame-options="trusted"><\/script>`);
     </script>
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            background: var(--sapBackgroundColor, #f5f6f7);
-        }
-
-        /* Fiori Elements sub-app mode (?app=...): shell bar on top, app fills the rest */
-        body.fiori-subapp-mode {
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        body.fiori-subapp-mode #launchpad-root {
-            display: none;
-        }
-        body.fiori-subapp-mode [data-sap-ui-component],
-        body.fiori-subapp-mode .sapUiComponentContainer {
-            height: calc(100vh - var(--retclShellHeight, 3rem)) !important;
-            width: 100% !important;
-            flex: 1 1 auto;
-            position: relative;
-        }
-        body.fiori-subapp-mode .sapUxAPObjectPageFooter,
-        body.fiori-subapp-mode .sapMPageFooter,
-        body.fiori-subapp-mode .sapFDynamicPageFooter {
-            z-index: 100 !important;
-        }
-
-        /* Launchpad */
-        #launchpad-root {
-            height: 100%;
-        }
-        .retclContainer {
-            max-width: 90rem;
-            margin: 0 auto;
-        }
-        .retclHeader {
-            margin-top: 0.5rem;
-            gap: 1rem;
-        }
-        .retclMuted.sapMText {
-            color: var(--sapContent_LabelColor, #556b82);
-        }
-        .retclSection {
-            margin: 2rem 0 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9);
-            gap: 0.5rem;
-        }
-        .retclSectionIcon {
-            color: var(--sapBrandColor, #0070f2);
-        }
-        .retclSectionHint.sapMText {
-            margin-left: auto;
-            font-size: 0.8125rem;
-            color: var(--sapContent_LabelColor, #556b82);
-        }
-        .retclDepotName.sapMText {
-            margin-top: 0.375rem;
-            font-size: 0.8125rem;
-        }
-        .retclFooter.sapMText {
-            display: block;
-            margin: 2.5rem 0 1rem;
-            text-align: center;
-            font-size: 0.75rem;
-            color: var(--sapContent_LabelColor, #556b82);
-        }
-        .retclBoot {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: "72", "72full", Arial, Helvetica, sans-serif;
-            color: var(--sapContent_LabelColor, #556b82);
-        }
-    </style>
 </head>
 <body class="sapUiBody">
     <script>
-        if (window.__FIORI_APP_CONFIG) {
-            document.body.classList.add('fiori-subapp-mode', 'sapUiSizeCompact');
-            initSubAppGuard(window.__FIORI_CURRENT_APP_ID, window.__FIORI_APP_CONFIG.title);
-            document.write(
-                '<div data-sap-ui-component ' +
-                'data-name="' + window.__FIORI_APP_CONFIG.ns + '" ' +
-                'data-id="container" ' +
-                'data-settings=\'{"id" : "' + window.__FIORI_APP_CONFIG.ns + '"}\'>' +
-                '</div>'
-            );
+        if (app) {
+            // Fiori app: placeholder that UI5's ComponentSupport turns into the app, plus our shell around it.
+            // data-height="100%" is required: without it the app gets height 0 and the page looks empty.
+            document.body.classList.add('retclAppMode', 'sapUiSizeCompact');
+            document.write(`<div data-sap-ui-component data-name="${app.ns}" data-id="container" data-height="100%" data-width="100%" data-settings='{"id":"${app.ns}"}'></div>`);
+            startAppShell(appId);
         }
     </script>
     <div id="launchpad-root"><div class="retclBoot">Loading launchpad&hellip;</div></div>
