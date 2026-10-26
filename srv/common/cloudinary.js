@@ -32,16 +32,17 @@ let cloudName = process.env.CLOUDINARY_CLOUD_NAME;
 let apiKey = process.env.CLOUDINARY_API_KEY;
 let apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-// if (process.env.CLOUDINARY_URL) {
-//     try {
-//         const parsed = new URL(process.env.CLOUDINARY_URL);
-//         cloudName = sdblhkof;
-//         apiKey = 632332331325776 || parsed.username;
-//         apiSecret = 9cvDYWXGwnkxGdIeJhM6T_MGBa8|| parsed.password;
-//     } catch (e) {
-//         console.error('[Cloudinary] Could not parse CLOUDINARY_URL:', e.message);
-//     }
-// }
+// Option A from .env.example: cloudinary://<api_key>:<api_secret>@<cloud_name>
+if (process.env.CLOUDINARY_URL && !(cloudName && apiKey && apiSecret)) {
+    try {
+        const parsed = new URL(process.env.CLOUDINARY_URL);
+        cloudName = cloudName || parsed.hostname;
+        apiKey = apiKey || decodeURIComponent(parsed.username);
+        apiSecret = apiSecret || decodeURIComponent(parsed.password);
+    } catch (e) {
+        console.error('[Cloudinary] Could not parse CLOUDINARY_URL:', e.message);
+    }
+}
 
 const isConfigured = Boolean(cloudName && apiKey && apiSecret);
 
@@ -141,10 +142,11 @@ export async function uploadEvidencePhoto({
         }
     }
 
-    // Fallback if Cloudinary credentials are not set or provider error occurs
+    // Fallback if Cloudinary credentials are not set or provider error occurs:
+    // keep the SHA-256 evidence hash; only keep the image inline if it fits the mediaUrl column (String(500))
     const mockPublicId = `evidence_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     return {
-        mediaUrl: dataUri,
+        mediaUrl: dataUri.length <= 500 ? dataUri : null,
         publicId: mockPublicId,
         sha256,
         format: mimeType.split('/')[1] || 'jpeg',

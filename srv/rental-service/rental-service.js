@@ -1,5 +1,6 @@
 import cds from '@sap/cds';
 import { exposeBoundActions } from '../common/bound-actions.js';
+import { hidePricesFromYardWorker } from '../common/hide-prices.js';
 
 export default class RentalService extends cds.ApplicationService {
     async init() {
@@ -838,6 +839,8 @@ export default class RentalService extends cds.ApplicationService {
         exposeBoundActions(this, 'Equipment', {
             transfer: ['transferEquipment', 'equipmentId']
         });
+
+        hidePricesFromYardWorker(this);
 
         await super.init();
     }

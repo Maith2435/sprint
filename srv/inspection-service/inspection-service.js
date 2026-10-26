@@ -1,5 +1,6 @@
 import cds from '@sap/cds';
 import { exposeBoundActions } from '../common/bound-actions.js';
+import { hidePricesFromYardWorker } from '../common/hide-prices.js';
 
 export default class InspectionService extends cds.ApplicationService {
     async init() {
@@ -413,6 +414,8 @@ export default class InspectionService extends cds.ApplicationService {
             submit: ['submitInspection', 'conditionLogId'],
             lock: ['lockInspection', 'conditionLogId']
         });
+
+        hidePricesFromYardWorker(this);
 
         await super.init();
     }

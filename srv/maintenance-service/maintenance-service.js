@@ -1,5 +1,6 @@
 import cds from '@sap/cds';
 import { exposeBoundActions } from '../common/bound-actions.js';
+import { hidePricesFromYardWorker } from '../common/hide-prices.js';
 
 export default class MaintenanceService extends cds.ApplicationService {
     async init() {
@@ -255,6 +256,8 @@ export default class MaintenanceService extends cds.ApplicationService {
             await this.send('releaseEquipmentToAvailable', { equipmentId: job.equipment_ID, reason: req.data.reason });
             return SELECT.one.from(RepairJobs).where({ ID: jobId });
         });
+
+        hidePricesFromYardWorker(this);
 
         await super.init();
     }
