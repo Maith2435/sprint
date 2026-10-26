@@ -280,7 +280,7 @@ entity Rentals : cuid, managed {
     expectedReturnDate : Date @mandatory @title: 'Expected Return Date' @Common.Label: 'Expected Return Date';
     actualReturnDate   : Date @title: 'Actual Return Date' @Common.Label: 'Actual Return Date' @UI.Hidden;
     rentalStatus       : RentalStatus default #Booked @title: 'Contract Status' @Common.Label: 'Contract Status';
-    totalRentalAmount  : Money @title: 'Total Contract Value ($)' @Common.Label: 'Total Contract Value ($)';
+    totalRentalAmount  : Money @title: 'Total Contract Value (₹)' @Common.Label: 'Total Contract Value (₹)';
     items              : Composition of many RentalItems
                             on items.rental = $self;
     statusHistory      : Association to many RentalStatusHistory
@@ -292,7 +292,7 @@ entity Rentals : cuid, managed {
 entity RentalItems : cuid, managed {
     rental          : Association to Rentals @mandatory @title: 'Rental Contract' @Common.Label: 'Rental Contract';
     equipment       : Association to Equipment @mandatory @title: 'Equipment Asset' @Common.Label: 'Equipment Asset';
-    dailyRentalRate : Money @title: 'Daily Rental Rate ($)' @Common.Label: 'Daily Rental Rate ($)';
+    dailyRentalRate : Money @title: 'Daily Rental Rate (₹)' @Common.Label: 'Daily Rental Rate (₹)';
     startDate       : Date @title: 'Start Date' @Common.Label: 'Start Date';
     endDate         : Date @title: 'End Date' @Common.Label: 'End Date';
     itemStatus      : ItemStatus default #Reserved @title: 'Item Status' @Common.Label: 'Item Status';
@@ -339,7 +339,7 @@ entity DamageRecords : cuid, managed {
     severity       : Severity @mandatory @title: 'Severity' @Common.Label: 'Severity';
     origin         : String(20) @title: 'Origin (New/Pre-existing)' @Common.Label: 'Origin (New/Pre-existing)';
     billable       : Boolean @title: 'Billable' @Common.Label: 'Billable';
-    repairEstimate : Money @title: 'Estimated Repair ($)' @Common.Label: 'Estimated Repair ($)';
+    repairEstimate : Money @title: 'Estimated Repair (₹)' @Common.Label: 'Estimated Repair (₹)';
     customerLiable : Boolean default false @title: 'Customer Liable' @Common.Label: 'Customer Liable';
     liableParty    : Association to Customers;
     preExisting    : Boolean default false;
@@ -377,7 +377,7 @@ entity MaintenanceRecords : cuid, managed {
     maintenanceDate     : Date @title: 'Maintenance Date' @Common.Label: 'Maintenance Date';
     description         : String(500) @title: 'Scope of Work / Description' @Common.Label: 'Scope of Work / Description';
     serviceProvider     : String(150) @title: 'Service Provider / Workshop' @Common.Label: 'Service Provider / Workshop';
-    cost                : Money @title: 'Estimated Service Cost ($)' @Common.Label: 'Estimated Service Cost ($)';
+    cost                : Money @title: 'Estimated Service Cost (₹)' @Common.Label: 'Estimated Service Cost (₹)';
     nextMaintenanceDate : Date @title: 'Next Service Due Date' @Common.Label: 'Next Service Due Date';
     status              : MaintenanceStatus default #Planned @title: 'Maintenance Status' @Common.Label: 'Maintenance Status';
 };
@@ -387,7 +387,7 @@ entity RepairJobs : cuid, managed {
     damage           : Association to DamageRecords @title: 'Damage Reference' @Common.Label: 'Damage Reference';
     technician       : String(100) @title: 'Lead Technician' @Common.Label: 'Lead Technician';
     labourHours      : Decimal(5,2) @title: 'Labour Hours' @Common.Label: 'Labour Hours';
-    actualCost       : Money @title: 'Material & Labor Cost ($)' @Common.Label: 'Material & Labor Cost ($)';
+    actualCost       : Money @title: 'Material & Labor Cost (₹)' @Common.Label: 'Material & Labor Cost (₹)';
     repairDetails    : String(500) @title: 'Technician Work Log' @Common.Label: 'Technician Work Log';
     status           : String(20) default 'Open' @title: 'Job Status' @Common.Label: 'Job Status';
     beforePhotoUrl   : String(500) @title: 'Pre-Repair Photo URL' @Common.Label: 'Pre-Repair Photo URL';
@@ -412,12 +412,12 @@ entity RepairBills : cuid, managed {
     damage            : Association to DamageRecords @title: 'Damage Record Reference' @Common.Label: 'Damage Record Reference';
     photos            : Composition of many DamagePhotos on photos.repairBill = $self;
     billDate         : Date @title: 'Bill Date' @Common.Label: 'Bill Date';
-    partsCost        : Money @title: 'Parts Cost ($)' @Common.Label: 'Parts Cost ($)';
-    labourCost       : Money @title: 'Labour Cost ($)' @Common.Label: 'Labour Cost ($)';
-    paintingCost     : Money @title: 'Painting Cost ($)' @Common.Label: 'Painting Cost ($)';
-    repairAmount     : Money @title: 'Net Repair Amount ($)' @Common.Label: 'Net Repair Amount ($)';
-    taxAmount        : Money @title: 'Tax Amount ($)' @Common.Label: 'Tax Amount ($)';
-    totalAmount      : Money @title: 'Total Invoice Amount ($)' @Common.Label: 'Total Invoice Amount ($)';
+    partsCost        : Money @title: 'Parts Cost (₹)' @Common.Label: 'Parts Cost (₹)';
+    labourCost       : Money @title: 'Labour Cost (₹)' @Common.Label: 'Labour Cost (₹)';
+    paintingCost     : Money @title: 'Painting Cost (₹)' @Common.Label: 'Painting Cost (₹)';
+    repairAmount     : Money @title: 'Net Repair Amount (₹)' @Common.Label: 'Net Repair Amount (₹)';
+    taxAmount        : Money @title: 'Tax Amount (₹)' @Common.Label: 'Tax Amount (₹)';
+    totalAmount      : Money @title: 'Total Invoice Amount (₹)' @Common.Label: 'Total Invoice Amount (₹)';
     billingStatus    : BillingStatus default #Draft @title: 'Approval Status' @Common.Label: 'Approval Status';
     approvalReason   : String(255) @title: 'Approval Notes' @Common.Label: 'Approval Notes';
     invoiceNo        : String(50) @title: 'Invoice Number' @Common.Label: 'Invoice Number';
@@ -426,12 +426,12 @@ entity RepairBills : cuid, managed {
 entity PricingRules : cuid, managed {
     damageType       : String(50) @mandatory @title: 'Damage Category' @Common.Label: 'Damage Category';
     severity         : Severity @mandatory @title: 'Severity Level' @Common.Label: 'Severity Level';
-    baseCharge       : Money @mandatory @title: 'Base Diagnostic Fee ($)' @Common.Label: 'Base Diagnostic Fee ($)';
-    partsCharge      : Money @title: 'Standard Parts ($)' @Common.Label: 'Standard Parts ($)';
+    baseCharge       : Money @mandatory @title: 'Base Diagnostic Fee (₹)' @Common.Label: 'Base Diagnostic Fee (₹)';
+    partsCharge      : Money @title: 'Standard Parts (₹)' @Common.Label: 'Standard Parts (₹)';
     labourRate       : Decimal(10,2) @title: 'Labour Rate ($/hr)' @Common.Label: 'Labour Rate ($/hr)';
-    paintingCharge   : Money @title: 'Painting Surcharge ($)' @Common.Label: 'Painting Surcharge ($)';
+    paintingCharge   : Money @title: 'Painting Surcharge (₹)' @Common.Label: 'Painting Surcharge (₹)';
     taxPercent       : Decimal(5,2) @title: 'Tax Percentage (%)' @Common.Label: 'Tax Percentage (%)';
-    autoApproveLimit : Money @title: 'Auto-Approve Threshold ($)' @Common.Label: 'Auto-Approve Threshold ($)';
+    autoApproveLimit : Money @title: 'Auto-Approve Threshold (₹)' @Common.Label: 'Auto-Approve Threshold (₹)';
 };
 
 /* ==========================================================================

@@ -21,7 +21,7 @@ annotate MaintenanceService.RepairJobs with @(
         { Value: equipment.serialNumber, Label: 'Serial' },
         { Value: technician, Label: 'Assigned Technician' },
         { Value: labourHours, Label: 'Actual Hours' },
-        { Value: actualCost, Label: 'Actual Repair Cost ($)' },
+        { Value: actualCost, Label: 'Actual Repair Cost (₹)' },
         {
             Value: status,
             Label: 'Status',
@@ -52,7 +52,7 @@ annotate MaintenanceService.RepairJobs with @(
             { Value: damage_ID, Label: 'Damage Reference' },
             { Value: technician, Label: 'Lead Technician' },
             { Value: labourHours, Label: 'Labour Hours' },
-            { Value: actualCost, Label: 'Material & Labor Cost ($)' },
+            { Value: actualCost, Label: 'Material & Labor Cost (₹)' },
             { Value: status, Label: 'Job Status' },
             { Value: repairDetails, Label: 'Technician Work Log' },
             { Value: beforePhotoUrl, Label: 'Pre-Repair Photo URL' },
@@ -64,7 +64,7 @@ annotate MaintenanceService.RepairJobs with @(
 
 annotate MaintenanceService.RepairJobs with {
     equipment      @title: 'Equipment Asset'          @Common.Label: 'Equipment Asset'
-                   @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextFirst
+                   @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextOnly
                    @Common.ValueList: {
                        CollectionPath: 'DamagedEquipment',
                        Parameters: [
@@ -86,7 +86,7 @@ annotate MaintenanceService.RepairJobs with {
                    };
     technician     @title: 'Lead Technician'          @Common.Label: 'Lead Technician';
     labourHours    @title: 'Labour Hours'             @Common.Label: 'Labour Hours';
-    actualCost     @title: 'Material & Labor Cost ($)' @Common.Label: 'Material & Labor Cost ($)';
+    actualCost     @title: 'Material & Labor Cost (₹)' @Common.Label: 'Material & Labor Cost (₹)';
     status         @title: 'Job Status'               @Common.Label: 'Job Status';
     repairDetails  @title: 'Technician Work Log'      @Common.Label: 'Technician Work Log';
     beforePhotoUrl @title: 'Pre-Repair Photo URL'     @Common.Label: 'Pre-Repair Photo URL';

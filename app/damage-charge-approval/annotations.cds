@@ -20,14 +20,6 @@ annotate BillingService.RepairBills with @(
         { Value: invoiceNo, Label: 'Invoice / Doc Ref' },
         { Value: customer.companyName, Label: 'Customer' },
         { Value: rental.contractNo, Label: 'Contract No' },
-        { Value: damageType, Label: 'Damage Type' },
-        { Value: billDate, Label: 'Bill Date' },
-        { Value: partsCost, Label: 'Parts ($)' },
-        { Value: labourCost, Label: 'Labour ($)' },
-        { Value: paintingCost, Label: 'Painting ($)' },
-        { Value: repairAmount, Label: 'Subtotal ($)' },
-        { Value: taxAmount, Label: 'Tax ($)' },
-        { Value: totalAmount, Label: 'Total Charge ($)' },
         {
             Value: billingStatus,
             Label: 'Billing Status',
@@ -39,6 +31,14 @@ annotate BillingService.RepairBills with @(
                 billingStatus = 'Rejected' ? 1 : 0
             )
         },
+        { Value: totalAmount, Label: 'Total Charge (₹)' },
+        { Value: billDate, Label: 'Bill Date' },
+        { Value: damageType, Label: 'Damage Type' },
+        { Value: partsCost, Label: 'Parts (₹)' },
+        { Value: labourCost, Label: 'Labour (₹)' },
+        { Value: paintingCost, Label: 'Painting (₹)' },
+        { Value: repairAmount, Label: 'Subtotal (₹)' },
+        { Value: taxAmount, Label: 'Tax (₹)' },
         { Value: approvalReason, Label: 'Approval / Dispute Notes' }
     ],
     UI.HeaderFacets: [
@@ -56,7 +56,11 @@ annotate BillingService.RepairBills with @(
         Title: 'Approval Status',
         Criticality: (
             billingStatus = 'Approved' ? 3 :
-            billingStatus = 'PendingApproval' ? 2 : 0
+            billingStatus = 'Posted' ? 3 :
+            billingStatus = 'Adjusted' ? 2 :
+            billingStatus = 'PendingApproval' ? 2 :
+            billingStatus = 'Disputed' ? 1 :
+            billingStatus = 'Rejected' ? 1 : 0
         )
     },
     UI.DataPoint #TotalBill: {
@@ -110,12 +114,12 @@ annotate BillingService.RepairBills with @(
             { Value: customer_ID, Label: 'Customer' },
             { Value: rental_ID, Label: 'Rental Contract' },
             { Value: equipment_ID, Label: 'Damaged Equipment' },
-            { Value: partsCost, Label: 'Parts Cost ($)' },
-            { Value: labourCost, Label: 'Labour Cost ($)' },
-            { Value: paintingCost, Label: 'Painting Cost ($)' },
-            { Value: taxAmount, Label: 'Tax Amount ($)' },
-            { Value: repairAmount, Label: 'Net Repair Amount ($)' },
-            { Value: totalAmount, Label: 'Gross Total ($)' },
+            { Value: partsCost, Label: 'Parts Cost (₹)' },
+            { Value: labourCost, Label: 'Labour Cost (₹)' },
+            { Value: paintingCost, Label: 'Painting Cost (₹)' },
+            { Value: taxAmount, Label: 'Tax Amount (₹)' },
+            { Value: repairAmount, Label: 'Net Repair Amount (₹)' },
+            { Value: totalAmount, Label: 'Gross Total (₹)' },
             { Value: billingStatus, Label: 'Status' },
             { Value: approvalReason, Label: 'Approval Notes' }
         ]
@@ -135,7 +139,7 @@ annotate BillingService.ContractEquipment with @(
 annotate BillingService.RepairBills with {
     invoiceNo         @title: 'Invoice Number'           @Common.Label: 'Invoice Number' @readonly;
     equipment         @title: 'Damaged Equipment'        @Common.Label: 'Damaged Equipment'
-                      @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextFirst
+                      @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextOnly
                       @Common.ValueList: {
                           CollectionPath: 'ContractEquipment',
                           Parameters: [
@@ -148,7 +152,7 @@ annotate BillingService.RepairBills with {
                           ]
                       };
     customer          @title: 'Customer / Client'        @Common.Label: 'Customer / Client'
-                      @Common.Text: customer.companyName @Common.TextArrangement: #TextFirst
+                      @Common.Text: customer.companyName @Common.TextArrangement: #TextOnly
                       @Common.ValueList: {
                           CollectionPath: 'Customers',
                           Parameters: [
@@ -158,7 +162,7 @@ annotate BillingService.RepairBills with {
                           ]
                       };
     rental            @title: 'Rental Contract'          @Common.Label: 'Rental Contract'
-                      @Common.Text: rental.contractNo    @Common.TextArrangement: #TextFirst
+                      @Common.Text: rental.contractNo    @Common.TextArrangement: #TextOnly
                       @Common.ValueList: {
                           CollectionPath: 'Rentals',
                           Parameters: [
@@ -184,12 +188,12 @@ annotate BillingService.RepairBills with {
     origin            @title: 'Origin'                   @Common.Label: 'Origin';
     inspectionRef     @title: 'Inspection Reference'     @Common.Label: 'Inspection Reference';
     billDate          @title: 'Bill Date'                @Common.Label: 'Bill Date';
-    partsCost         @title: 'Parts Cost ($)'           @Common.Label: 'Parts Cost ($)';
-    labourCost        @title: 'Labour Cost ($)'          @Common.Label: 'Labour Cost ($)';
-    paintingCost      @title: 'Painting Cost ($)'        @Common.Label: 'Painting Cost ($)';
-    repairAmount      @title: 'Net Repair Amount ($)'    @Common.Label: 'Net Repair Amount ($)' @readonly;
-    taxAmount         @title: 'Tax Amount ($)'           @Common.Label: 'Tax Amount ($)';
-    totalAmount       @title: 'Gross Total ($)'          @Common.Label: 'Gross Total ($)'       @readonly;
+    partsCost         @title: 'Parts Cost (₹)'           @Common.Label: 'Parts Cost (₹)';
+    labourCost        @title: 'Labour Cost (₹)'          @Common.Label: 'Labour Cost (₹)';
+    paintingCost      @title: 'Painting Cost (₹)'        @Common.Label: 'Painting Cost (₹)';
+    repairAmount      @title: 'Net Repair Amount (₹)'    @Common.Label: 'Net Repair Amount (₹)' @readonly;
+    taxAmount         @title: 'Tax Amount (₹)'           @Common.Label: 'Tax Amount (₹)';
+    totalAmount       @title: 'Gross Total (₹)'          @Common.Label: 'Gross Total (₹)'       @readonly;
     billingStatus     @title: 'Approval Status'          @Common.Label: 'Approval Status'       @readonly;
     approvalReason    @title: 'Approval Notes'           @Common.Label: 'Approval Notes';
 };

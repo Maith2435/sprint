@@ -6,18 +6,26 @@ service InspectionService {
 
     @odata.draft.enabled
     @restrict: [
+        { grant: ['READ'], to: ['YardWorker', 'Technician', 'Dispatcher', 'Manager', 'Admin', 'Auditor'] },
         { grant: ['*'], to: ['YardWorker', 'Manager', 'Admin'] }
     ]
-    entity ConditionLogs as projection on my.ConditionLogs;
+    entity ConditionLogs as projection on my.ConditionLogs actions {
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action submit() returns ConditionLogs;
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action lock() returns ConditionLogs;
+    };
 
     @odata.draft.enabled
     @restrict: [
+        { grant: ['READ'], to: ['YardWorker', 'Technician', 'Dispatcher', 'Manager', 'Admin', 'Auditor'] },
         { grant: ['*'], to: ['YardWorker', 'Technician', 'Manager', 'Admin'] }
     ]
     entity DamageRecords as projection on my.DamageRecords;
 
 
     @restrict: [
+        { grant: ['READ'], to: ['YardWorker', 'Technician', 'Dispatcher', 'Manager', 'Admin', 'Auditor'] },
         { grant: ['*'], to: ['YardWorker', 'Technician', 'Manager', 'Admin'] }
     ]
     entity DamagePhotos as projection on my.DamagePhotos;
@@ -75,7 +83,10 @@ service InspectionService {
     }
 
     // Actions for Yard Worker / Inspector Workflow
+    @requires: ['YardWorker', 'Manager', 'Admin']
     action submitInspection(conditionLogId: UUID) returns ConditionLogs;
+    @requires: ['YardWorker', 'Manager', 'Admin']
     action lockInspection(conditionLogId: UUID) returns ConditionLogs;
+    @requires: ['YardWorker', 'Dispatcher', 'Manager', 'Admin']
     action acknowledgeInspection(conditionLogId: UUID, signatureUrl: String) returns ConditionLogs;
 }

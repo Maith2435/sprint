@@ -87,7 +87,7 @@ annotate InspectionService.ConditionLogs with @(
 
 annotate InspectionService.ConditionLogs with {
     equipment        @title: 'Equipment Asset'       @Common.Label: 'Equipment Asset'
-                     @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextFirst
+                     @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextOnly
                      @Common.ValueList: {
                          CollectionPath: 'ContractEquipment',
                          Parameters: [
@@ -100,7 +100,7 @@ annotate InspectionService.ConditionLogs with {
                          ]
                      };
     rental           @title: 'Rental Contract'       @Common.Label: 'Rental Contract'
-                     @Common.Text: rental.contractNo @Common.TextArrangement: #TextFirst
+                     @Common.Text: rental.contractNo @Common.TextArrangement: #TextOnly
                      @Common.ValueList: {
                          CollectionPath: 'Rentals',
                          Parameters: [
@@ -170,7 +170,7 @@ annotate InspectionService.DamageRecords with @(
             )
         },
         { Value: origin, Label: 'Origin (New/Pre-existing)' },
-        { Value: repairEstimate, Label: 'Estimated Repair ($)' },
+        { Value: repairEstimate, Label: 'Estimated Repair (₹)' },
         { Value: billable, Label: 'Billable' },
         { Value: customerLiable, Label: 'Customer Liable' },
         {
@@ -203,7 +203,7 @@ annotate InspectionService.DamageRecords with @(
             { Value: severity, Label: 'Severity' },
             { Value: description, Label: 'Damage Description' },
             { Value: origin, Label: 'Origin' },
-            { Value: repairEstimate, Label: 'Estimated Repair Cost ($)' },
+            { Value: repairEstimate, Label: 'Estimated Repair Cost (₹)' },
             { Value: billable, Label: 'Billable to Customer' },
             { Value: customerLiable, Label: 'Customer Liable' },
             { Value: damageStatus, Label: 'Current Status' }
@@ -224,7 +224,7 @@ annotate InspectionService.DamageRecords with {
     area           @title: 'Equipment Area'         @Common.Label: 'Equipment Area' @Common.ValueListWithFixedValues: true;
     severity       @title: 'Severity'               @Common.Label: 'Severity' @Common.ValueListWithFixedValues: true;
     damageStatus   @title: 'Damage Status'          @Common.Label: 'Damage Status' @Common.ValueListWithFixedValues: true;
-    repairEstimate @title: 'Estimated Repair ($)'   @Common.Label: 'Estimated Repair ($)';
+    repairEstimate @title: 'Estimated Repair (₹)'   @Common.Label: 'Estimated Repair (₹)';
     description    @title: 'Damage Description'     @Common.Label: 'Damage Description';
 };
 

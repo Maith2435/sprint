@@ -20,11 +20,7 @@ annotate RentalService.Equipment with @(
     ],
     UI.LineItem: [
         { Value: equipmentNo, Label: 'Equipment No' },
-        { Value: serialNumber, Label: 'Serial Number' },
         { Value: equipmentName, Label: 'Equipment Name' },
-        { Value: category, Label: 'Category' },
-        { Value: manufacturer, Label: 'Manufacturer' },
-        { Value: model, Label: 'Model' },
         {
             Value: currentStatus,
             Label: 'Status',
@@ -45,9 +41,13 @@ annotate RentalService.Equipment with @(
                 currentGrade = 'C' ? 2 : 1
             )
         },
-        { Value: rentalRatePerDay, Label: 'Daily Rate ($)' },
         { Value: location.locationName, Label: 'Current Location' },
-        { Value: nextServiceDate, Label: 'Next Service' }
+        { Value: rentalRatePerDay, Label: 'Daily Rate (₹)' },
+        { Value: nextServiceDate, Label: 'Next Service' },
+        { Value: category, Label: 'Category' },
+        { Value: serialNumber, Label: 'Serial Number' },
+        { Value: manufacturer, Label: 'Manufacturer' },
+        { Value: model, Label: 'Model' }
     ],
     UI.HeaderFacets: [
         {
@@ -69,7 +69,9 @@ annotate RentalService.Equipment with @(
         Criticality: (
             currentStatus = 'Available' ? 3 :
             currentStatus = 'RentedOut' ? 2 :
-            currentStatus = 'Damaged' ? 1 : 0
+            currentStatus = 'InRepair' ? 2 :
+            currentStatus = 'Damaged' ? 1 :
+            currentStatus = 'Quarantined' ? 1 : 0
         )
     },
     UI.DataPoint #Grade: {
@@ -111,7 +113,7 @@ annotate RentalService.Equipment with @(
             { Value: equipmentType, Label: 'Type' },
             { Value: manufacturer, Label: 'Manufacturer' },
             { Value: model, Label: 'Model' },
-            { Value: rentalRatePerDay, Label: 'Daily Rental Rate ($)' },
+            { Value: rentalRatePerDay, Label: 'Daily Rental Rate (₹)' },
             { Value: purchaseDate, Label: 'Purchase Date' },
             { Value: currentMeterReading, Label: 'Meter Reading (Hours)' }
         ]
@@ -133,7 +135,7 @@ annotate RentalService.Equipment with {
     equipmentType       @title: 'Equipment Type'                @Common.Label: 'Equipment Type';
     manufacturer        @title: 'Manufacturer'                  @Common.Label: 'Manufacturer';
     model               @title: 'Model'                         @Common.Label: 'Model';
-    rentalRatePerDay    @title: 'Daily Rental Rate ($)'         @Common.Label: 'Daily Rental Rate ($)';
+    rentalRatePerDay    @title: 'Daily Rental Rate (₹)'         @Common.Label: 'Daily Rental Rate (₹)';
     currentStatus       @title: 'Operational Status'            @Common.Label: 'Operational Status';
     currentGrade        @title: 'Condition Grade'               @Common.Label: 'Condition Grade';
     currentMeterReading @title: 'Meter Reading (Hours)'         @Common.Label: 'Meter Reading (Hours)';

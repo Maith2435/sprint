@@ -1,8 +1,11 @@
 import cds from '@sap/cds';
+import { exposeBoundActions } from '../common/bound-actions.js';
 
 export default class MaintenanceService extends cds.ApplicationService {
     async init() {
-        const { MaintenanceRecords, RepairJobs, Equipment, DamageRecords, AssetStatusHistory } = this.entities;
+        const { MaintenanceRecords, RepairJobs, Equipment, DamageRecords } = this.entities;
+        // Not exposed by this service, so write to the database entity directly
+        const AssetStatusHistory = 'RentalEquipmentTrackingApp.AssetStatusHistory';
 
         // Clean up blank or abandoned repair jobs drafts
         this.before('READ', 'RepairJobs', async (req) => {
@@ -233,6 +236,24 @@ export default class MaintenanceService extends cds.ApplicationService {
             });
 
             return await SELECT.one.from(Equipment).where({ ID: equipmentId });
+        });
+
+        // Workflow buttons on the selected record (forward to the actions above)
+        exposeBoundActions(this, 'MaintenanceRecords', {
+            complete: ['completeMaintenanceRecord', 'recordId']
+        });
+        exposeBoundActions(this, 'RepairJobs', {
+            complete: ['completeRepairJob', 'repairJobId']
+        });
+        // Release the job's equipment back to the available fleet
+        this.on('releaseEquipment', 'RepairJobs', async (req) => {
+            const key = req.params[0];
+            const jobId = key && typeof key === 'object' ? key.ID : key;
+            const job = await SELECT.one.from(RepairJobs).where({ ID: jobId });
+            if (!job) return req.error(404, 'Repair job not found');
+            if (!job.equipment_ID) return req.error(400, 'This repair job has no equipment assigned');
+            await this.send('releaseEquipmentToAvailable', { equipmentId: job.equipment_ID, reason: req.data.reason });
+            return SELECT.one.from(RepairJobs).where({ ID: jobId });
         });
 
         await super.init();

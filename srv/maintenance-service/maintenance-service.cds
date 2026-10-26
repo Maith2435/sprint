@@ -6,15 +6,34 @@ service MaintenanceService {
 
     @odata.draft.enabled
     @restrict: [
+        { grant: ['READ'], to: ['Technician', 'Manager', 'Admin', 'Auditor'] },
         { grant: ['*'], to: ['Technician', 'Manager', 'Admin'] }
     ]
-    entity MaintenanceRecords as projection on my.MaintenanceRecords;
+    entity MaintenanceRecords as projection on my.MaintenanceRecords actions {
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action complete(
+            @title: 'Actual Cost (₹)' cost: Decimal(12,2),
+            @title: 'Next Service Date' nextServiceDate: Date
+        ) returns MaintenanceRecords;
+    };
 
     @odata.draft.enabled
     @restrict: [
+        { grant: ['READ'], to: ['Technician', 'Manager', 'Admin', 'Auditor'] },
         { grant: ['*'], to: ['Technician', 'Manager', 'Admin'] }
     ]
-    entity RepairJobs as projection on my.RepairJobs;
+    entity RepairJobs as projection on my.RepairJobs actions {
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action complete(
+            @title: 'Labour Hours' labourHours: Decimal(5,2),
+            @title: 'Actual Repair Cost (₹)' actualCost: Decimal(12,2),
+            @title: 'Work Performed' @UI.MultiLineText repairDetails: String
+        ) returns RepairJobs;
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action releaseEquipment(
+            @title: 'Release Notes' @UI.MultiLineText reason: String
+        ) returns RepairJobs;
+    };
 
     @readonly
     @cds.redirection.target
@@ -43,9 +62,13 @@ service MaintenanceService {
     ]
     entity DamageRecords as projection on my.DamageRecords;
 
-    // Actions for Workshop & Technician Operations
+    // Actions for Workshop & Technician Operations (FRD: Technician repairs and releases quarantine)
+    @requires: ['Technician', 'Manager', 'Admin']
     action createRepairJob(damageId: UUID, technician: String) returns RepairJobs;
+    @requires: ['Technician', 'Manager', 'Admin']
     action completeRepairJob(repairJobId: UUID, labourHours: Decimal(5,2), actualCost: Decimal(12,2), repairDetails: String, afterPhotoUrl: String) returns RepairJobs;
+    @requires: ['Technician', 'Manager', 'Admin']
     action completeMaintenanceRecord(recordId: UUID, cost: Decimal(12,2), nextServiceDate: Date) returns MaintenanceRecords;
+    @requires: ['Technician', 'Manager', 'Admin']
     action releaseEquipmentToAvailable(equipmentId: UUID, reason: String) returns Equipment;
 }
