@@ -1,4 +1,5 @@
 import cds from '@sap/cds';
+import { exposeBoundActions } from '../common/bound-actions.js';
 
 export default class BillingService extends cds.ApplicationService {
     async init() {
@@ -425,6 +426,15 @@ export default class BillingService extends cds.ApplicationService {
             });
 
             return await SELECT.one.from(RepairBills).where({ ID: billId });
+        });
+
+        // Workflow buttons on the selected bill (forward to the actions above)
+        exposeBoundActions(this, 'RepairBills', {
+            approve: ['approveRepairBill', 'billId', d => ({ approvalReason: d.reason })],
+            adjust: ['adjustRepairBill', 'billId'],
+            reject: ['rejectRepairBill', 'billId'],
+            dispute: ['disputeRepairBill', 'billId'],
+            post: ['postInvoice', 'billId']
         });
 
         await super.init();

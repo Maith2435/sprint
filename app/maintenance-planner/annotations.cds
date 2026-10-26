@@ -23,7 +23,7 @@ annotate MaintenanceService.MaintenanceRecords with @(
         { Value: maintenanceType, Label: 'Service Type' },
         { Value: maintenanceDate, Label: 'Service Date' },
         { Value: serviceProvider, Label: 'Service Provider' },
-        { Value: cost, Label: 'Cost ($)' },
+        { Value: cost, Label: 'Cost (₹)' },
         {
             Value: status,
             Label: 'Status',
@@ -50,7 +50,7 @@ annotate MaintenanceService.MaintenanceRecords with @(
             { Value: maintenanceDate, Label: 'Service Date' },
             { Value: nextMaintenanceDate, Label: 'Next Due Date' },
             { Value: serviceProvider, Label: 'Service Provider / Workshop' },
-            { Value: cost, Label: 'Estimated Service Cost ($)' },
+            { Value: cost, Label: 'Estimated Service Cost (₹)' },
             { Value: description, Label: 'Scope of Work / Description' }
         ]
     }
@@ -58,7 +58,7 @@ annotate MaintenanceService.MaintenanceRecords with @(
 
 annotate MaintenanceService.MaintenanceRecords with {
     equipment           @title: 'Equipment Asset'              @Common.Label: 'Equipment Asset'
-                        @Common.Text: equipment.equipmentName  @Common.TextArrangement: #TextFirst
+                        @Common.Text: equipment.equipmentName  @Common.TextArrangement: #TextOnly
                         @Common.ValueList: {
                             CollectionPath: 'Equipment',
                             Parameters: [
@@ -75,6 +75,6 @@ annotate MaintenanceService.MaintenanceRecords with {
     maintenanceDate     @title: 'Service Date'                 @Common.Label: 'Service Date';
     nextMaintenanceDate @title: 'Next Due Date'                @Common.Label: 'Next Due Date';
     serviceProvider     @title: 'Service Provider / Workshop'  @Common.Label: 'Service Provider / Workshop';
-    cost                @title: 'Estimated Service Cost ($)'   @Common.Label: 'Estimated Service Cost ($)';
+    cost                @title: 'Estimated Service Cost (₹)'   @Common.Label: 'Estimated Service Cost (₹)';
     description         @title: 'Scope of Work / Description'  @Common.Label: 'Scope of Work / Description';
 };

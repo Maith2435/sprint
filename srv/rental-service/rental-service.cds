@@ -49,9 +49,25 @@ service RentalService {
     @cds.redirection.target
     @restrict: [
         { grant: ['READ'], to: ['Dispatcher', 'YardWorker', 'Technician', 'BillingClerk', 'Manager', 'Admin', 'Auditor'] },
-        { grant: ['*'], to: ['Dispatcher', 'Manager', 'Admin'] }
+        { grant: ['*'], to: ['Dispatcher', 'Manager', 'Admin'] },
+        { grant: ['transfer'], to: ['YardWorker'] }
     ]
-    entity Equipment as projection on my.Equipment;
+    entity Equipment as projection on my.Equipment actions {
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action transfer(
+            @title: 'Target Location' @mandatory
+            @Common.ValueListWithFixedValues
+            @Common.ValueList: {
+                CollectionPath: 'Locations',
+                Parameters: [
+                    { $Type: 'Common.ValueListParameterInOut', LocalDataProperty: toLocationId, ValueListProperty: 'ID' },
+                    { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'locationName' }
+                ]
+            }
+            toLocationId: UUID,
+            @title: 'Reason for Transfer' @UI.MultiLineText reason: String
+        ) returns Equipment;
+    };
 
     @readonly
     @restrict: [
@@ -77,7 +93,18 @@ service RentalService {
         { grant: ['READ'], to: ['Dispatcher', 'BillingClerk', 'Manager', 'Admin', 'Auditor'] },
         { grant: ['*'], to: ['Dispatcher', 'Manager', 'Admin'] }
     ]
-    entity Rentals as projection on my.Rentals;
+    entity Rentals as projection on my.Rentals actions {
+        @Common.SideEffects: { TargetEntities: ['in', 'in/items'] }
+        action checkOut() returns Rentals;
+        @Common.SideEffects: { TargetEntities: ['in', 'in/items'] }
+        action checkIn(
+            @title: 'Actual Return Date' @mandatory actualReturnDate: Date
+        ) returns Rentals;
+        @Common.SideEffects: { TargetEntities: ['in', 'in/items'] }
+        action cancel(
+            @title: 'Cancellation Reason' @mandatory @UI.MultiLineText reason: String
+        ) returns Rentals;
+    };
 
     @restrict: [
         { grant: ['READ'], to: ['Dispatcher', 'BillingClerk', 'Manager', 'Admin', 'Auditor'] },

@@ -1,4 +1,5 @@
 import cds from '@sap/cds';
+import { exposeBoundActions } from '../common/bound-actions.js';
 
 export default class RentalService extends cds.ApplicationService {
     async init() {
@@ -812,6 +813,16 @@ export default class RentalService extends cds.ApplicationService {
                 }
             }
         } catch (e) {}
+
+        // Workflow buttons on the selected record (forward to the actions above)
+        exposeBoundActions(this, 'Rentals', {
+            checkOut: ['checkOutRental', 'rentalId'],
+            checkIn: ['checkInRental', 'rentalId'],
+            cancel: ['cancelRental', 'rentalId']
+        });
+        exposeBoundActions(this, 'Equipment', {
+            transfer: ['transferEquipment', 'equipmentId']
+        });
 
         await super.init();
     }

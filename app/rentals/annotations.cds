@@ -36,7 +36,7 @@ annotate RentalService.Rentals with @(
                 rentalStatus = 'Overdue' ? 1 : 0
             )
         },
-        { Value: totalRentalAmount, Label: 'Contract Value ($)' }
+        { Value: totalRentalAmount, Label: 'Contract Value (₹)' }
     ],
     UI.Facets: [
         {
@@ -66,7 +66,7 @@ annotate RentalService.Rentals with @(
         Data: [
             { Value: contractNo, Label: 'Contract Number' },
             { Value: customer_ID, Label: 'Customer / Client' },
-            { Value: totalRentalAmount, Label: 'Total Contract Value ($)' }
+            { Value: totalRentalAmount, Label: 'Total Contract Value (₹)' }
         ]
     },
     UI.FieldGroup #RentalSchedule: {
@@ -80,7 +80,7 @@ annotate RentalService.Rentals with @(
 annotate RentalService.Rentals with {
     contractNo         @mandatory @readonly @title: 'Contract Number'       @Common.Label: 'Contract Number';
     customer           @title: 'Customer / Client'     @Common.Label: 'Customer / Client'
-                       @Common.Text: customer.companyName @Common.TextArrangement: #TextFirst
+                       @Common.Text: customer.companyName @Common.TextArrangement: #TextOnly
                        @Common.ValueList: {
         CollectionPath: 'Customers',
         Parameters: [
@@ -94,7 +94,7 @@ annotate RentalService.Rentals with {
     expectedReturnDate @title: 'Expected Return Date'  @Common.Label: 'Expected Return Date';
     actualReturnDate   @title: 'Actual Return Date'    @Common.Label: 'Actual Return Date' @UI.Hidden: true;
     rentalStatus       @title: 'Contract Status'       @Common.Label: 'Contract Status';
-    totalRentalAmount  @title: 'Total Contract Value ($)' @Common.Label: 'Total Contract Value ($)';
+    totalRentalAmount  @title: 'Total Contract Value (₹)' @Common.Label: 'Total Contract Value (₹)';
     statusHistory      @UI.Hidden: true;
     conditionLogs      @UI.Hidden: true;
 };
@@ -136,7 +136,7 @@ annotate RentalService.RentalItems with @(
             Label: 'Serial Number',
             ![@Common.FieldControl]: #ReadOnly
         },
-        { Value: dailyRentalRate, Label: 'Daily Rate ($)' },
+        { Value: dailyRentalRate, Label: 'Daily Rate (₹)' },
         { Value: startDate, Label: 'Start Date' },
         { Value: endDate, Label: 'End Date' },
         { Value: itemStatus, Label: 'Item Status' }
@@ -151,7 +151,7 @@ annotate RentalService.RentalItems with @(
     UI.FieldGroup #ItemDetails: {
         Data: [
             { Value: equipment_ID, Label: 'Equipment Asset' },
-            { Value: dailyRentalRate, Label: 'Daily Rental Rate ($)' },
+            { Value: dailyRentalRate, Label: 'Daily Rental Rate (₹)' },
             { Value: startDate, Label: 'Start Date' },
             { Value: endDate, Label: 'End Date' },
             { Value: itemStatus, Label: 'Item Status' }
@@ -161,7 +161,7 @@ annotate RentalService.RentalItems with @(
 
 annotate RentalService.RentalItems with {
     equipment       @title: 'Equipment'        @Common.Label: 'Equipment'
-                    @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextFirst
+                    @Common.Text: equipment.equipmentName @Common.TextArrangement: #TextOnly
                     @Common.ValueList: {
         CollectionPath: 'AvailableEquipment',
         Parameters: [
@@ -173,7 +173,7 @@ annotate RentalService.RentalItems with {
             { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'rentalRatePerDay' }
         ]
     };
-    dailyRentalRate @title: 'Daily Rate ($)'   @Common.Label: 'Daily Rate ($)';
+    dailyRentalRate @title: 'Daily Rate (₹)'   @Common.Label: 'Daily Rate (₹)';
     startDate       @title: 'Start Date'       @Common.Label: 'Start Date';
     endDate         @title: 'End Date'         @Common.Label: 'End Date';
     itemStatus      @title: 'Item Status'      @Common.Label: 'Item Status';

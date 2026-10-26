@@ -7,42 +7,66 @@ const FIORI_ROLES_CONFIG = {
     'Admin': {
         title: 'System Administrator',
         color: '#0070f2',
-        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner']
+        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner'],
+        // apps where the role may create/edit/delete, and where it may run workflow actions
+        edit: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner'],
+        act: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner']
     },
     'Dispatcher': {
         title: 'Rental Dispatcher & Coordinator',
         color: '#00838f',
-        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections']
+        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections'],
+        // apps where the role may create/edit/delete, and where it may run workflow actions
+        edit: ['customer-management', 'rentals', 'locations', 'fleet-overview'],
+        act: ['rentals', 'fleet-overview', 'locations']
     },
     'YardWorker': {
         title: 'Senior Yard Inspector',
         color: '#107e3e',
-        apps: ['fleet-overview', 'locations', 'inspections']
+        apps: ['fleet-overview', 'locations', 'inspections'],
+        // apps where the role may create/edit/delete, and where it may run workflow actions
+        edit: ['inspections'],
+        act: ['inspections', 'fleet-overview']
     },
     'BillingClerk': {
         title: 'Billing & Dispute Specialist',
         color: '#8e44ad',
-        apps: ['customer-management', 'rentals', 'damage-charge-approval']
+        apps: ['customer-management', 'rentals', 'damage-charge-approval'],
+        // apps where the role may create/edit/delete, and where it may run workflow actions
+        edit: ['damage-charge-approval'],
+        act: ['damage-charge-approval']
     },
     'Technician': {
         title: 'Lead Workshop Technician',
         color: '#e67e22',
-        apps: ['repair-jobs', 'maintenance-planner', 'fleet-overview', 'locations', 'inspections']
+        apps: ['repair-jobs', 'maintenance-planner', 'fleet-overview', 'locations', 'inspections'],
+        // apps where the role may create/edit/delete, and where it may run workflow actions
+        edit: ['repair-jobs', 'maintenance-planner'],
+        act: ['repair-jobs', 'maintenance-planner']
     },
     'Manager': {
         title: 'Operations & Fleet Director',
         color: '#2980b9',
-        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner']
+        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner'],
+        // apps where the role may create/edit/delete, and where it may run workflow actions
+        edit: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner'],
+        act: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner']
     },
     'Auditor': {
         title: 'Compliance & Quality Auditor (read-only)',
         color: '#d35400',
-        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner']
+        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner'],
+        // apps where the role may create/edit/delete, and where it may run workflow actions
+        edit: [],
+        act: []
     },
     'None': {
         title: 'No role assigned - ask an admin to assign a sprint role collection',
         color: '#bb0000',
-        apps: []
+        apps: [],
+        // apps where the role may create/edit/delete, and where it may run workflow actions
+        edit: [],
+        act: []
     }
 };
 
@@ -130,72 +154,48 @@ function initSubAppGuard(currentAppId, currentAppTitle) {
     const roleCfg = FIORI_ROLES_CONFIG[session.role];
     const isAllowed = roleCfg && (roleCfg.apps.includes(currentAppId) || session.role === 'Admin');
 
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    injectShellStyles();
+
     if (!isAllowed) {
-        // Render Access Denied Screen
+        // Access denied: same shell bar, then a centred message
         document.addEventListener('DOMContentLoaded', function () {
-            document.body.innerHTML = `
-                <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f5f6f7; font-family:'72', -apple-system, sans-serif; text-align:center; padding:2rem;">
-                    <div style="background:#ffffff; border-radius:12px; padding:3rem; max-width:550px; box-shadow:0 10px 30px rgba(0,0,0,0.1); border-top:5px solid #bb0000;">
-                        <div style="font-size:3.5rem; margin-bottom:1rem;">🚫</div>
-                        <h2 style="color:#1d2d3e; font-size:1.6rem; margin-bottom:0.75rem;">Authorization Required</h2>
-                        <p style="color:#556b82; font-size:0.95rem; line-height:1.5; margin-bottom:1.5rem;">
-                            You are logged in as <strong>${session.name}</strong> (<span style="color:#0070f2; font-weight:600;">${roleCfg ? roleCfg.title : session.role}</span>).
-                            Your current role does not have authorization to access <strong>${currentAppTitle || currentAppId}</strong>.
-                        </p>
-                        <div style="background:#fff3cd; color:#856404; padding:0.75rem 1rem; border-radius:6px; font-size:0.85rem; margin-bottom:1.75rem; border:1px solid #ffeeba;">
-                            Allowed Roles: <strong>${getAllowedRolesForApp(currentAppId).join(', ')}</strong>
-                        </div>
-                        <a href="/index.html" style="display:inline-block; background:#0070f2; color:#fff; text-decoration:none; padding:0.75rem 1.75rem; border-radius:6px; font-weight:600; font-size:0.95rem; box-shadow:0 2px 6px rgba(0,112,242,0.3);">
-                            &larr; Return to SAP Fiori Launchpad
-                        </a>
-                    </div>
-                </div>
-            `;
+            document.body.innerHTML = '';
+            document.body.prepend(buildShellBar(session, roleCfg, currentAppTitle, esc));
+            const box = document.createElement('div');
+            box.className = 'retclDenied';
+            box.innerHTML = `
+                <div class="retclDeniedCard">
+                    <div class="retclDeniedIcon" aria-hidden="true">&#x1F512;</div>
+                    <h2>Authorization required</h2>
+                    <p>You are signed in as <strong>${esc(session.name)}</strong> (${esc(roleCfg ? roleCfg.title : session.role)}).
+                       Your role does not include <strong>${esc(currentAppTitle || currentAppId)}</strong>.</p>
+                    <p class="retclDeniedRoles">Roles with access: ${esc(getAllowedRolesForApp(currentAppId).join(', ') || 'none')}</p>
+                    <a class="retclBtnEmph" href="/index.html">Back to launchpad</a>
+                </div>`;
+            document.body.appendChild(box);
         });
         return false;
     }
 
-    // Insert slim top Fiori Shell bar
+    // Read-only for this app: hide create/edit/delete and/or workflow buttons the backend would refuse
+    const hide = [];
+    if (!(roleCfg.edit || []).includes(currentAppId)) {
+        hide.push('[id*="::StandardAction::Create"]', '[id*="::StandardAction::Edit"]', '[id*="::StandardAction::Delete"]',
+            '[id*="::StandardAction::CreateFromMenu"]', '[id$="::Create"]', '[id$="::Delete"]');
+    }
+    if (!(roleCfg.act || []).includes(currentAppId)) {
+        hide.push('[id*="::DataFieldForAction::"]');
+    }
+    if (hide.length) {
+        const st = document.createElement('style');
+        st.textContent = hide.join(',\n') + ' { display: none !important; }';
+        document.head.appendChild(st);
+    }
+
+    // Shell bar matching the launchpad
     document.addEventListener('DOMContentLoaded', function () {
-        const topBar = document.createElement('div');
-        topBar.id = 'fiori-subapp-topbar';
-        topBar.style.cssText = `
-            height: 42px;
-            background: linear-gradient(135deg, #1d2d3e 0%, #0d1926 100%);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 1.25rem;
-            font-family: '72', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 0.85rem;
-            position: relative;
-            z-index: 99999;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-            flex-shrink: 0;
-        `;
-
-        topBar.innerHTML = `
-            <div style="display:flex; align-items:center; gap:1rem;">
-                <a href="/index.html" style="color:#ffffff; text-decoration:none; display:flex; align-items:center; gap:0.4rem; font-weight:600; font-size:0.85rem; background:rgba(255,255,255,0.12); padding:0.25rem 0.65rem; border-radius:4px; border:1px solid rgba(255,255,255,0.2); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">
-                    <span>&larr;</span>
-                    <span>Launchpad</span>
-                </a>
-                <span style="color:#9cb5cf;">|</span>
-                <span style="font-weight:700; color:#fff; letter-spacing:0.2px;">${currentAppTitle || 'SAP Fiori Application'}</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:0.75rem;">
-                <span style="background:#0070f2; color:#fff; font-size:0.7rem; font-weight:700; padding:0.15rem 0.5rem; border-radius:10px; text-transform:uppercase;">
-                    ${session.role}
-                </span>
-                <div style="width:26px; height:26px; border-radius:50%; background:${roleCfg ? roleCfg.color : '#0070f2'}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;">
-                    ${session.avatar}
-                </div>
-                <span style="color:#e1e7ed; font-size:0.8rem; font-weight:500;">${session.name.split(' ')[0]}</span>
-                <span style="color:#809fb8; font-size:0.75rem;">(${session.plant.split(' ')[0]})</span>
-            </div>
-        `;
-
+        const topBar = buildShellBar(session, roleCfg, currentAppTitle, esc);
         document.body.prepend(topBar);
 
         // Automatic draft discard mechanism for new unsaved records
@@ -302,7 +302,7 @@ function initSubAppGuard(currentAppId, currentAppTitle) {
 
         const comp = document.querySelector('[data-sap-ui-component]');
         if (comp) {
-            comp.style.height = 'calc(100vh - 42px)';
+            comp.style.height = 'calc(100vh - var(--retclShellHeight, 3rem))';
             comp.style.flex = '1 1 auto';
             comp.style.position = 'relative';
             comp.style.overflow = 'hidden';
@@ -310,6 +310,81 @@ function initSubAppGuard(currentAppId, currentAppTitle) {
     });
 
     return true;
+}
+
+// Shell bar shown above every Fiori app; mirrors the launchpad's sap.f.ShellBar and uses SAP theme
+// parameters (CSS variables), so it follows the light/dark Horizon theme automatically.
+function buildShellBar(session, roleCfg, appTitle, esc) {
+    const bar = document.createElement('header');
+    bar.id = 'fiori-subapp-topbar';
+    bar.className = 'retclShell';
+    const roleText = session.role === 'None' ? 'No role assigned' : (roleCfg ? roleCfg.title : session.role);
+    bar.innerHTML = `
+        <a class="retclShellBack" href="/index.html" title="Back to launchpad" aria-label="Back to launchpad">
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10.5 2.5 5 8l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <span class="retclShellLogo" aria-hidden="true">RET</span>
+        <div class="retclShellTitles">
+            <span class="retclShellTitle">${esc(appTitle || 'Rental Equipment Tracking')}</span>
+            <span class="retclShellSub">Rental Equipment Tracking</span>
+        </div>
+        <div class="retclShellSpacer"></div>
+        <span class="retclShellRole${session.role === 'None' ? ' retclShellRoleNone' : ''}">${esc(roleText)}</span>
+        <span class="retclShellAvatar" title="${esc(session.name)}${session.plant && session.plant !== '-' ? ' · ' + esc(session.plant) : ''}">${esc(session.avatar)}</span>`;
+    return bar;
+}
+
+function injectShellStyles() {
+    if (document.getElementById('retclShellStyles')) return;
+    const st = document.createElement('style');
+    st.id = 'retclShellStyles';
+    st.textContent = `
+        :root { --retclShellHeight: 3rem; }
+        .retclShell {
+            height: var(--retclShellHeight); flex-shrink: 0; box-sizing: border-box;
+            display: flex; align-items: center; gap: 0.5rem; padding: 0 1rem;
+            background: var(--sapShell_Background, #fff); color: var(--sapShell_TextColor, #1d2d3e);
+            box-shadow: var(--sapContent_HeaderShadow, 0 0 0.125rem rgba(34,53,72,.15), inset 0 -0.0625rem 0 rgba(34,53,72,.2));
+            font-family: var(--sapFontFamily, "72", "72full", Arial, Helvetica, sans-serif); font-size: var(--sapFontSize, .875rem);
+            position: relative; z-index: 100;
+        }
+        .retclShellBack {
+            display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem;
+            border-radius: var(--sapButton_BorderCornerRadius, .5rem); color: var(--sapShell_InteractiveTextColor, var(--sapShell_TextColor, #1d2d3e));
+            text-decoration: none;
+        }
+        .retclShellBack:hover { background: var(--sapShell_Hover_Background, var(--sapButton_Lite_Hover_Background, #eaecee)); }
+        .retclShellBack:focus-visible { outline: var(--sapContent_FocusWidth, .125rem) solid var(--sapContent_FocusColor, #0070f2); }
+        .retclShellLogo {
+            background: var(--sapBrandColor, #0070f2); color: #fff; font-weight: 700; font-size: .8125rem; letter-spacing: .02em;
+            padding: .3rem .55rem; border-radius: .375rem;
+        }
+        .retclShellTitles { display: flex; align-items: baseline; gap: .625rem; min-width: 0; margin-left: .25rem; }
+        .retclShellTitle { font-family: var(--sapFontBoldFamily, "72-Bold", "72", Arial, sans-serif); font-weight: 700; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .retclShellSub { color: var(--sapContent_LabelColor, #556b82); font-size: .875rem; white-space: nowrap; }
+        .retclShellSpacer { flex: 1; }
+        .retclShellRole {
+            background: var(--sapInformationBackgroundColor, #e1f4ff); color: var(--sapInformativeTextColor, #0064d9);
+            border-radius: 1rem; padding: .2rem .65rem; font-size: .75rem; font-weight: 600; white-space: nowrap;
+        }
+        .retclShellRoleNone { background: var(--sapErrorBackgroundColor, #ffeaf4); color: var(--sapNegativeTextColor, #aa0808); }
+        .retclShellAvatar {
+            width: 2rem; height: 2rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+            background: var(--sapAccentColor6, #286eb4); color: var(--sapContent_ContrastTextColor, #fff); font-size: .75rem; font-weight: 700;
+        }
+        @media (max-width: 600px) { .retclShellSub, .retclShellRole { display: none; } }
+        .retclDenied { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem;
+            background: var(--sapBackgroundColor, #f5f6f7); font-family: var(--sapFontFamily, "72", Arial, sans-serif); min-height: calc(100vh - var(--retclShellHeight)); }
+        .retclDeniedCard { background: var(--sapTile_Background, #fff); color: var(--sapTextColor, #1d2d3e); border-radius: 1rem;
+            box-shadow: var(--sapContent_Shadow1, 0 0 .125rem rgba(34,53,72,.15)); padding: 2.5rem; max-width: 34rem; text-align: center; }
+        .retclDeniedCard h2 { margin: .5rem 0; font-size: 1.375rem; }
+        .retclDeniedCard p { color: var(--sapContent_LabelColor, #556b82); line-height: 1.5; }
+        .retclDeniedIcon { font-size: 2.5rem; }
+        .retclDeniedRoles { font-size: .8125rem; }
+        .retclBtnEmph { display: inline-block; margin-top: 1rem; padding: .55rem 1.25rem; border-radius: .5rem; text-decoration: none; font-weight: 600;
+            background: var(--sapButton_Emphasized_Background, #0070f2); color: var(--sapButton_Emphasized_TextColor, #fff); }
+    `;
+    document.head.appendChild(st);
 }
 
 function getAllowedRolesForApp(appId) {

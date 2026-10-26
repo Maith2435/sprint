@@ -90,6 +90,17 @@
                     "route": "LocationsObjectPage"
                   }
                 }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "GridTable",
+                    "enableExport": true,
+                    "enableFullScreen": true,
+                    "selectionMode": "Multi",
+                    "condensedTableLayout": true
+                  }
+                }
               }
             }
           }
@@ -119,6 +130,10 @@
           }
         }
       }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
     }
   },
   "sap.cloud": {

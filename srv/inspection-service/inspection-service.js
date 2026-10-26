@@ -1,8 +1,11 @@
 import cds from '@sap/cds';
+import { exposeBoundActions } from '../common/bound-actions.js';
 
 export default class InspectionService extends cds.ApplicationService {
     async init() {
-        const { ConditionLogs, DamageRecords, Equipment, AssetStatusHistory } = this.entities;
+        const { ConditionLogs, DamageRecords, Equipment } = this.entities;
+        // Not exposed by this service, so write to the database entity directly
+        const AssetStatusHistory = 'RentalEquipmentTrackingApp.AssetStatusHistory';
 
         // Clean up blank or abandoned inspection drafts
         this.before('READ', 'ConditionLogs', async (req) => {
@@ -403,6 +406,12 @@ export default class InspectionService extends cds.ApplicationService {
                 signatureUrl: signatureUrl || null
             }).where({ ID: conditionLogId });
             return await SELECT.one.from(ConditionLogs).where({ ID: conditionLogId });
+        });
+
+        // Workflow buttons on the selected inspection (forward to the actions above)
+        exposeBoundActions(this, 'ConditionLogs', {
+            submit: ['submitInspection', 'conditionLogId'],
+            lock: ['lockInspection', 'conditionLogId']
         });
 
         await super.init();

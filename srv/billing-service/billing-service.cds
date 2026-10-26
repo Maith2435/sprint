@@ -9,7 +9,29 @@ service BillingService {
         { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor'] },
         { grant: ['*'], to: ['BillingClerk', 'Manager', 'Admin'] }
     ]
-    entity RepairBills as projection on my.RepairBills;
+    entity RepairBills as projection on my.RepairBills actions {
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action approve(
+            @title: 'Approval Notes' @UI.MultiLineText reason: String
+        ) returns RepairBills;
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action adjust(
+            @title: 'Parts Cost (₹)' partsCost: Decimal(12,2),
+            @title: 'Labour Cost (₹)' labourCost: Decimal(12,2),
+            @title: 'Painting Cost (₹)' paintingCost: Decimal(12,2),
+            @title: 'Reason for Adjustment' @mandatory @UI.MultiLineText reason: String
+        ) returns RepairBills;
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action reject(
+            @title: 'Reason for Rejection' @mandatory @UI.MultiLineText reason: String
+        ) returns RepairBills;
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action dispute(
+            @title: 'Dispute Details' @mandatory @UI.MultiLineText reason: String
+        ) returns RepairBills;
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action post() returns RepairBills;
+    };
 
     @restrict: [
         { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor', 'YardWorker', 'Technician'] },

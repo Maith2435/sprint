@@ -9,7 +9,12 @@ service InspectionService {
         { grant: ['READ'], to: ['YardWorker', 'Technician', 'Dispatcher', 'Manager', 'Admin', 'Auditor'] },
         { grant: ['*'], to: ['YardWorker', 'Manager', 'Admin'] }
     ]
-    entity ConditionLogs as projection on my.ConditionLogs;
+    entity ConditionLogs as projection on my.ConditionLogs actions {
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action submit() returns ConditionLogs;
+        @Common.SideEffects: { TargetEntities: ['in'] }
+        action lock() returns ConditionLogs;
+    };
 
     @odata.draft.enabled
     @restrict: [

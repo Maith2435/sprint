@@ -10,3 +10,4 @@ using from './inspections/annotations';
 using from './damage-charge-approval/annotations';
 using from './repair-jobs/annotations';
 using from './maintenance-planner/annotations';
+using from './workflow-actions';
