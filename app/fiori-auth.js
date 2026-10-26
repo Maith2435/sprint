@@ -22,12 +22,12 @@ const FIORI_ROLES_CONFIG = {
     'BillingClerk': {
         title: 'Billing & Dispute Specialist',
         color: '#8e44ad',
-        apps: ['rentals', 'damage-charge-approval']
+        apps: ['customer-management', 'rentals', 'damage-charge-approval']
     },
     'Technician': {
         title: 'Lead Workshop Technician',
         color: '#e67e22',
-        apps: ['repair-jobs', 'maintenance-planner', 'fleet-overview', 'locations']
+        apps: ['repair-jobs', 'maintenance-planner', 'fleet-overview', 'locations', 'inspections']
     },
     'Manager': {
         title: 'Operations & Fleet Director',
@@ -35,9 +35,9 @@ const FIORI_ROLES_CONFIG = {
         apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner']
     },
     'Auditor': {
-        title: 'Compliance & Quality Auditor',
+        title: 'Compliance & Quality Auditor (read-only)',
         color: '#d35400',
-        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval']
+        apps: ['customer-management', 'rentals', 'locations', 'fleet-overview', 'inspections', 'damage-charge-approval', 'repair-jobs', 'maintenance-planner']
     },
     'None': {
         title: 'No role assigned - ask an admin to assign a sprint role collection',

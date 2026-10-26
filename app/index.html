@@ -766,22 +766,22 @@
 
             <!-- Executive KPI Banner -->
             <section class="kpi-banner">
-                <div class="kpi-card success" id="kpi-available-card" onclick="window.location.href='/fleet-overview/webapp/index.html'" title="Click to view Fleet Overview" data-roles="Admin,Dispatcher,YardWorker,Technician,Manager">
+                <div class="kpi-card success" id="kpi-available-card" onclick="window.location.href='/fleet-overview/webapp/index.html'" title="Click to view Fleet Overview" data-app="fleet-overview">
                     <span class="kpi-label">Available Fleet</span>
                     <div class="kpi-value" id="kpi-available">2 Assets</div>
                     <span class="kpi-sub" id="kpi-available-sub">Ready for Dispatch &bull; Yard A</span>
                 </div>
-                <div class="kpi-card" id="kpi-rented-card" onclick="window.location.href='/rentals/webapp/index.html'" title="Click to view Rental Contracts" data-roles="Admin,Dispatcher,BillingClerk,Manager">
+                <div class="kpi-card" id="kpi-rented-card" onclick="window.location.href='/rentals/webapp/index.html'" title="Click to view Rental Contracts" data-app="rentals">
                     <span class="kpi-label">Rented Out Fleet</span>
                     <div class="kpi-value" id="kpi-rented">4 Assets</div>
                     <span class="kpi-sub" id="kpi-rented-sub">Active On-Site &bull; XYZ Construction</span>
                 </div>
-                <div class="kpi-card warning" id="kpi-pending-card" onclick="window.location.href='/damage-charge-approval/webapp/index.html'" title="Click to view Damage Approvals" data-roles="Admin,BillingClerk,Manager,Auditor">
+                <div class="kpi-card warning" id="kpi-pending-card" onclick="window.location.href='/damage-charge-approval/webapp/index.html'" title="Click to view Damage Approvals" data-app="damage-charge-approval">
                     <span class="kpi-label">Pending Approval</span>
                     <div class="kpi-value" id="kpi-pending">&#8377;35,400</div>
                     <span class="kpi-sub" id="kpi-pending-sub">Invoice #9000123456 &bull; Damage Bill</span>
                 </div>
-                <div class="kpi-card error" id="kpi-damaged-card" onclick="window.location.href='/repair-jobs/webapp/index.html'" title="Click to view Workshop Repairs" data-roles="Admin,YardWorker,Technician,Manager,Auditor">
+                <div class="kpi-card error" id="kpi-damaged-card" onclick="window.location.href='/repair-jobs/webapp/index.html'" title="Click to view Workshop Repairs" data-app="repair-jobs">
                     <span class="kpi-label">Quarantined / Damaged</span>
                     <div class="kpi-value" id="kpi-damaged">5 Assets</div>
                     <span class="kpi-sub" id="kpi-damaged-sub">In Workshop &bull; Repair / Quarantine</span>
@@ -799,7 +799,7 @@
                 <div class="tiles-grid">
 
                     <!-- Tile: Customer Management -->
-                    <a href="/index.html?app=customer-management" class="fiori-tile" id="tile-customer-management" data-app="customer-management" data-roles="Admin,Dispatcher,Manager">
+                    <a href="/index.html?app=customer-management" class="fiori-tile" id="tile-customer-management" data-app="customer-management">
                         <div class="tile-top">
                             <span class="tile-icon">🏢</span>
                             <span class="tile-badge">Master Data / Draft</span>
@@ -807,13 +807,13 @@
                         <h3 class="tile-title">Customer Management</h3>
                         <p class="tile-desc">Register new corporate rental customers (e.g. XYZ Construction Pvt. Ltd.), create contact persons, view addresses, and review active rental contracts.</p>
                         <div class="tile-footer">
-                            <span class="tile-role-pill">Dispatcher &bull; Admin &bull; Mgr</span>
+                            <span class="tile-role-pill">Dispatcher &bull; Mgr &bull; Admin</span>
                             <span>Open Fiori App &rarr;</span>
                         </div>
                     </a>
 
                     <!-- Tile 1: Fleet Overview & Asset Detail -->
-                    <a href="/index.html?app=fleet-overview" class="fiori-tile" id="tile-fleet-overview" data-app="fleet-overview" data-roles="Admin,Dispatcher,YardWorker,Technician,Manager">
+                    <a href="/index.html?app=fleet-overview" class="fiori-tile" id="tile-fleet-overview" data-app="fleet-overview">
                         <div class="tile-top">
                             <span class="tile-icon">🚜</span>
                             <span class="tile-badge">ALP / List Report</span>
@@ -821,13 +821,13 @@
                         <h3 class="tile-title">Fleet Overview & Asset Detail</h3>
                         <p class="tile-desc">Track equipment availability, operational status, condition grades (A-D), and location telemetry across depots.</p>
                         <div class="tile-footer">
-                            <span class="tile-role-pill">Dispatcher &bull; Yard &bull; Tech</span>
+                            <span class="tile-role-pill">Dispatcher &bull; Mgr &bull; Admin</span>
                             <span>Open Fiori App &rarr;</span>
                         </div>
                     </a>
 
                     <!-- Tile: Rental Contracts & Allocations -->
-                    <a href="/index.html?app=rentals" class="fiori-tile" id="tile-rentals" data-app="rentals" data-roles="Admin,Dispatcher,Manager,BillingClerk,Auditor">
+                    <a href="/index.html?app=rentals" class="fiori-tile" id="tile-rentals" data-app="rentals">
                         <div class="tile-top">
                             <span class="tile-icon">📑</span>
                             <span class="tile-badge">Contracts / Items</span>
@@ -835,13 +835,13 @@
                         <h3 class="tile-title">Rental Contracts & Allocations</h3>
                         <p class="tile-desc">Manage rental agreements (e.g. RENT-10001), reserve equipment assets, track rental periods, and trigger check-out.</p>
                         <div class="tile-footer">
-                            <span class="tile-role-pill">Dispatcher &bull; Billing &bull; Mgr</span>
+                            <span class="tile-role-pill">Dispatcher &bull; Mgr &bull; Admin</span>
                             <span>Open Fiori App &rarr;</span>
                         </div>
                     </a>
 
                     <!-- Tile: Depot & Yard Locations -->
-                    <a href="/index.html?app=locations" class="fiori-tile" id="tile-locations" data-app="locations" data-roles="Admin,Dispatcher,YardWorker,Technician,Manager,Auditor">
+                    <a href="/index.html?app=locations" class="fiori-tile" id="tile-locations" data-app="locations">
                         <div class="tile-top">
                             <span class="tile-icon">📍</span>
                             <span class="tile-badge">Depot / Yard</span>
@@ -849,7 +849,7 @@
                         <h3 class="tile-title">Depot & Yard Locations</h3>
                         <p class="tile-desc">Maintain equipment depots (e.g. NAGPUR Main Yard - PLANT-NGP), workshops, job sites, and GPS coordinates.</p>
                         <div class="tile-footer">
-                            <span class="tile-role-pill">Yard &bull; Dispatch &bull; Tech</span>
+                            <span class="tile-role-pill">Dispatcher &bull; Mgr &bull; Admin</span>
                             <span>Open Fiori App &rarr;</span>
                         </div>
                     </a>
@@ -868,7 +868,7 @@
                 <div class="tiles-grid">
 
                     <!-- Tile: Condition Logs & Inspections -->
-                    <a href="/index.html?app=inspections" class="fiori-tile" id="tile-inspections" data-app="inspections" data-roles="Admin,Dispatcher,YardWorker,Manager,Auditor">
+                    <a href="/index.html?app=inspections" class="fiori-tile" id="tile-inspections" data-app="inspections">
                         <div class="tile-top">
                             <span class="tile-icon">📋</span>
                             <span class="tile-badge">Departure / Return</span>
@@ -876,7 +876,7 @@
                         <h3 class="tile-title">Condition Logs & Inspections</h3>
                         <p class="tile-desc">Capture check-out and return condition logs, record meter readings, assign condition grades (A-D), and lock audit reports.</p>
                         <div class="tile-footer">
-                            <span class="tile-role-pill">YardWorker &bull; Dispatch &bull; Mgr</span>
+                            <span class="tile-role-pill">Yard &bull; Tech &bull; Mgr</span>
                             <span>Open Fiori App &rarr;</span>
                         </div>
                     </a>
@@ -895,7 +895,7 @@
                 <div class="tiles-grid">
 
                     <!-- Tile 3: Damage Charge Approval -->
-                    <a href="/index.html?app=damage-charge-approval" class="fiori-tile" id="tile-damage-charge" data-app="damage-charge-approval" data-roles="Admin,BillingClerk,Manager,Auditor,YardWorker,Technician">
+                    <a href="/index.html?app=damage-charge-approval" class="fiori-tile" id="tile-damage-charge" data-app="damage-charge-approval">
                         <div class="tile-top">
                             <span class="tile-icon">💳</span>
                             <span class="tile-badge">Worklist & Actions</span>
@@ -903,7 +903,7 @@
                         <h3 class="tile-title">Damage Charge Approval</h3>
                         <p class="tile-desc">Review automated repair bills with damage particulars, inspect photo evidence, and approve or adjust customer repair charges.</p>
                         <div class="tile-footer">
-                            <span class="tile-role-pill">BillingClerk &bull; Mgr &bull; Audit</span>
+                            <span class="tile-role-pill">Billing &bull; Mgr &bull; Admin</span>
                             <span>Open Fiori App &rarr;</span>
                         </div>
                     </a>
@@ -922,7 +922,7 @@
                 <div class="tiles-grid">
 
                     <!-- Tile 5: Workshop Repair Jobs -->
-                    <a href="/index.html?app=repair-jobs" class="fiori-tile" id="tile-repair-jobs" data-app="repair-jobs" data-roles="Admin,Technician,Manager">
+                    <a href="/index.html?app=repair-jobs" class="fiori-tile" id="tile-repair-jobs" data-app="repair-jobs">
                         <div class="tile-top">
                             <span class="tile-icon">🔧</span>
                             <span class="tile-badge">Technician Worklist</span>
@@ -930,13 +930,13 @@
                         <h3 class="tile-title">Workshop Repair Jobs</h3>
                         <p class="tile-desc">Dispatch damage repair jobs, capture actual technician hours & parts cost, and attach before/after photos.</p>
                         <div class="tile-footer">
-                            <span class="tile-role-pill">Technician &bull; Mgr</span>
+                            <span class="tile-role-pill">Tech &bull; Mgr &bull; Admin</span>
                             <span>Open Fiori App &rarr;</span>
                         </div>
                     </a>
 
                     <!-- Tile 6: Maintenance Planner -->
-                    <a href="/index.html?app=maintenance-planner" class="fiori-tile" id="tile-maintenance-planner" data-app="maintenance-planner" data-roles="Admin,Technician,Manager">
+                    <a href="/index.html?app=maintenance-planner" class="fiori-tile" id="tile-maintenance-planner" data-app="maintenance-planner">
                         <div class="tile-top">
                             <span class="tile-icon">📅</span>
                             <span class="tile-badge">Calendar & List</span>
@@ -944,7 +944,7 @@
                         <h3 class="tile-title">Maintenance Planner</h3>
                         <p class="tile-desc">Track scheduled 250h/500h preventive services, calibration routines, and service provider costs.</p>
                         <div class="tile-footer">
-                            <span class="tile-role-pill">Technician &bull; Mgr</span>
+                            <span class="tile-role-pill">Tech &bull; Mgr &bull; Admin</span>
                             <span>Open Fiori App &rarr;</span>
                         </div>
                     </a>
@@ -992,7 +992,7 @@
             document.getElementById('login-view').style.display = 'none';
             document.getElementById('launchpad-view').style.display = 'flex';
 
-            const roleCfg = window.FIORI_ROLES_CONFIG[session.role] || window.FIORI_ROLES_CONFIG['Admin'];
+            const roleCfg = window.FIORI_ROLES_CONFIG[session.role] || window.FIORI_ROLES_CONFIG['None'];
 
             // Header info
             document.getElementById('shell-user-avatar').textContent = session.avatar || 'AD';
@@ -1009,8 +1009,7 @@
             let visibleAppCount = 0;
             const tiles = document.querySelectorAll('.fiori-tile');
             tiles.forEach(tile => {
-                const allowedRoles = (tile.getAttribute('data-roles') || '').split(',').map(s => s.trim());
-                if (session.role === 'Admin' || allowedRoles.includes(session.role)) {
+                if (roleCfg.apps.includes(tile.getAttribute('data-app'))) {
                     tile.style.display = 'flex';
                     visibleAppCount++;
                 } else {
@@ -1032,8 +1031,7 @@
             // Filter KPIs
             const kpiCards = document.querySelectorAll('.kpi-card');
             kpiCards.forEach(card => {
-                const allowedRoles = (card.getAttribute('data-roles') || '').split(',').map(s => s.trim());
-                if (session.role === 'Admin' || allowedRoles.includes(session.role)) {
+                if (roleCfg.apps.includes(card.getAttribute('data-app'))) {
                     card.style.display = 'flex';
                 } else {
                     card.style.display = 'none';

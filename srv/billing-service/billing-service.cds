@@ -6,11 +6,13 @@ service BillingService {
 
     @odata.draft.enabled
     @restrict: [
-        { grant: ['*'], to: ['BillingClerk', 'Manager', 'Admin', 'YardWorker', 'Technician'] }
+        { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor'] },
+        { grant: ['*'], to: ['BillingClerk', 'Manager', 'Admin'] }
     ]
     entity RepairBills as projection on my.RepairBills;
 
     @restrict: [
+        { grant: ['READ'], to: ['BillingClerk', 'Manager', 'Admin', 'Auditor', 'YardWorker', 'Technician'] },
         { grant: ['*'], to: ['BillingClerk', 'Manager', 'Admin', 'YardWorker', 'Technician'] }
     ]
     entity DamagePhotos as projection on my.DamagePhotos;
@@ -81,11 +83,17 @@ service BillingService {
         key code : String(10);
     };
 
-    // Pricing Engine & Billing Approval Workflows
+    // Pricing Engine & Billing Approval Workflows (FRD: BillingClerk approves and disputes; Manager all approvals)
+    @requires: ['BillingClerk', 'Manager', 'Admin']
     action calculateDamageCharge(damageId: UUID) returns RepairBills;
+    @requires: ['BillingClerk', 'Manager', 'Admin']
     action approveRepairBill(billId: UUID, approvalReason: String) returns RepairBills;
+    @requires: ['BillingClerk', 'Manager', 'Admin']
     action adjustRepairBill(billId: UUID, partsCost: Decimal(12,2), labourCost: Decimal(12,2), paintingCost: Decimal(12,2), reason: String) returns RepairBills;
+    @requires: ['BillingClerk', 'Manager', 'Admin']
     action rejectRepairBill(billId: UUID, reason: String) returns RepairBills;
+    @requires: ['BillingClerk', 'Manager', 'Admin']
     action disputeRepairBill(billId: UUID, reason: String) returns RepairBills;
+    @requires: ['BillingClerk', 'Manager', 'Admin']
     action postInvoice(billId: UUID) returns RepairBills;
 }
