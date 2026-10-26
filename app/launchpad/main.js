@@ -32,13 +32,15 @@ sap.ui.define([
     "sap/m/MessageStrip",
     "sap/m/OverflowToolbarButton",
     "sap/suite/ui/microchart/StackedBarMicroChart",
-    "sap/suite/ui/microchart/StackedBarMicroChartBar"
+    "sap/suite/ui/microchart/StackedBarMicroChartBar",
+    "sap/m/ProgressIndicator",
+    "sap/ui/core/Icon"
 ], function (
     ShellBar, GridContainer, GridContainerSettings, GridContainerItemLayoutData, Card, CardHeader,
     Page, VBox, HBox, FlexBox, Title, Text, Label, Avatar, Button, ObjectStatus,
     GenericTile, TileContent, NumericContent, ImageContent, List, StandardListItem,
     ResponsivePopover, IllustratedMessage, MessageStrip, OverflowToolbarButton,
-    StackedBarMicroChart, StackedBarMicroChartBar
+    StackedBarMicroChart, StackedBarMicroChartBar, ProgressIndicator, Icon
 ) {
     "use strict";
 
@@ -59,6 +61,25 @@ sap.ui.define([
         { title: "Billing", apps: ["damage-charge-approval"] },
         { title: "Workshop & Maintenance", apps: ["repair-jobs", "maintenance-planner"] }
     ];
+    // Hero quick actions: what each role usually does first
+    const QUICK = {
+        "rentals": { text: "Manage rentals", icon: "sap-icon://sales-document" },
+        "inspections": { text: "Log inspection", icon: "sap-icon://inspection" },
+        "damage-charge-approval": { text: "Review charges", icon: "sap-icon://money-bills" },
+        "repair-jobs": { text: "Workshop queue", icon: "sap-icon://wrench" },
+        "maintenance-planner": { text: "Plan service", icon: "sap-icon://appointment-2" },
+        "fleet-overview": { text: "Find an asset", icon: "sap-icon://search" },
+        "customer-management": { text: "Customers", icon: "sap-icon://customer" }
+    };
+    const QUICK_ORDER = {
+        Dispatcher: ["rentals", "fleet-overview", "customer-management"],
+        YardWorker: ["inspections", "fleet-overview"],
+        Technician: ["repair-jobs", "maintenance-planner", "fleet-overview"],
+        BillingClerk: ["damage-charge-approval", "rentals", "customer-management"],
+        Manager: ["damage-charge-approval", "rentals", "repair-jobs"],
+        Admin: ["rentals", "damage-charge-approval", "fleet-overview"],
+        Auditor: ["fleet-overview", "damage-charge-approval", "rentals"]
+    };
     const STATUS_TEXT = {
         Available: "Available", RentedOut: "Rented out", ReturnedPendingInspection: "Awaiting inspection",
         Damaged: "Damaged", InRepair: "In repair", InTransit: "In transit", UnderMaintenance: "Under maintenance",
@@ -114,8 +135,12 @@ sap.ui.define([
         const h = new Date().getHours();
         return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
     }
-    function sectionTitle(text) {
-        return new Title({ text: text, level: "H3", titleStyle: "H5" }).addStyleClass("sapUiMediumMarginTop sapUiSmallMarginBottom");
+    function sectionTitle(text, icon, hint) {
+        return new HBox({ alignItems: "Center", items: [
+            new Icon({ src: icon || "sap-icon://along-stacked-chart", size: "1.125rem" }).addStyleClass("retclSectionIcon"),
+            new Title({ text: text, level: "H3", titleStyle: "H5" }),
+            hint ? new Text({ text: hint }).addStyleClass("retclSectionHint") : null
+        ].filter(Boolean) }).addStyleClass("retclSection");
     }
     function grid(items) {
         return new GridContainer({
@@ -154,9 +179,11 @@ sap.ui.define([
     }
 
     // ---------------------------------------------------------------- data
+    const EQUIPMENT_URL = "/rental/Equipment?$filter=IsActiveEntity eq true&$select=ID,equipmentNo,equipmentName,currentStatus,currentGrade,nextServiceDate";
     async function loadData(canOpen) {
         const [equipment, rentals, bills, history] = await Promise.all([
-            getJson("/rental/Equipment?$filter=IsActiveEntity eq true&$select=ID,equipmentNo,equipmentName,currentStatus,currentGrade,nextServiceDate"),
+            // Depot names need Locations access; retry without them for roles that cannot read Locations
+            getJson(EQUIPMENT_URL + "&$expand=location($select=locationName)").then(r => r || getJson(EQUIPMENT_URL)),
             getJson("/rental/Rentals?$filter=IsActiveEntity eq true&$select=ID,contractNo,rentalStatus,expectedReturnDate,totalRentalAmount&$expand=customer($select=companyName)"),
             canOpen("damage-charge-approval")
                 ? getJson("/billing/RepairBills?$filter=IsActiveEntity eq true&$select=ID,invoiceNo,billingStatus,totalAmount,billDate&$expand=customer($select=companyName)")
@@ -175,6 +202,11 @@ sap.ui.define([
             d.equipment.forEach(e => {
                 a.byStatus[e.currentStatus] = (a.byStatus[e.currentStatus] || 0) + 1;
                 if (a.byGrade[e.currentGrade] !== undefined) a.byGrade[e.currentGrade]++;
+            });
+            a.byDepot = {};
+            d.equipment.forEach(e => {
+                const depot = e.location ? e.location.locationName : "Unassigned";
+                a.byDepot[depot] = (a.byDepot[depot] || 0) + 1;
             });
             a.available = a.byStatus.Available || 0;
             a.rentedOut = a.byStatus.RentedOut || 0;
@@ -197,13 +229,11 @@ sap.ui.define([
 
     // ---------------------------------------------------------------- KPI tiles
     function kpiTile(o) {
-        return new GenericTile({
+        const tile = new GenericTile({
             header: o.header,
             subheader: o.subheader,
             frameType: "OneByOne",
             layoutData: cardLayout(2, 2),
-            press: o.app ? () => go(o.app) : undefined,
-            tooltip: o.app ? "Open " + APPS[o.app].title : undefined,
             tileContent: [new TileContent({
                 unit: o.unit,
                 footer: o.footer,
@@ -217,6 +247,12 @@ sap.ui.define([
                 })
             })]
         });
+        // Only clickable when the role can open the related app (UI5 rejects an undefined press handler)
+        if (o.app) {
+            tile.attachPress(() => go(o.app));
+            tile.setTooltip("Open " + APPS[o.app].title);
+        }
+        return tile;
     }
 
     function buildKpis(a, canOpen) {
@@ -273,7 +309,13 @@ sap.ui.define([
                     legend.addStyleClass("sapUiTinyMarginTop"),
                     new Label({ text: "Condition grade (A best - D poor)" }).addStyleClass("sapUiSmallMarginTop"),
                     new StackedBarMicroChart({ size: "Responsive", height: "2rem", width: "100%",
-                        bars: grades.map(g => new StackedBarMicroChartBar({ value: a.byGrade[g], valueColor: gradeColors[g], displayValue: "Grade " + g + ": " + a.byGrade[g] })) })
+                        bars: grades.map(g => new StackedBarMicroChartBar({ value: a.byGrade[g], valueColor: gradeColors[g], displayValue: "Grade " + g + ": " + a.byGrade[g] })) }),
+                    new Label({ text: "Assets by depot" }).addStyleClass("sapUiSmallMarginTop"),
+                    ...Object.entries(a.byDepot).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([depot, n]) => new VBox({ items: [
+                        new Text({ text: depot }).addStyleClass("retclDepotName"),
+                        new ProgressIndicator({ percentValue: Math.round(n / a.total * 100), displayValue: n + (n === 1 ? " asset" : " assets"),
+                            state: "None", height: "1.25rem", width: "100%", displayOnly: true })
+                    ] }))
                 ]
             }).addStyleClass("sapUiSmallMargin")
         });
@@ -412,16 +454,17 @@ sap.ui.define([
         const popover = userPopover(session, roleCfg);
         const content = new VBox({ width: "100%" });
 
-        // Welcome header
+        // Header: greeting and context on the left, the role's main tasks on the right
         const firstName = (session.name || "").split(/[\s@]/)[0];
-        content.addItem(new VBox({ items: [
-            new Title({ text: greeting() + (firstName ? ", " + firstName : ""), level: "H1", titleStyle: "H3" }),
-            new HBox({ alignItems: "Center", wrap: "Wrap", items: [
-                new ObjectStatus({ text: session.role === "None" ? "No role assigned" : roleCfg.title, state: session.role === "None" ? "Error" : "Information",
-                    inverted: true, icon: "sap-icon://employee" }).addStyleClass("sapUiSmallMarginEnd"),
-                new Text({ text: session.plant + " · " + today.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) })
-            ] }).addStyleClass("sapUiTinyMarginTop")
-        ] }).addStyleClass("sapUiSmallMarginBottom"));
+        const quick = (QUICK_ORDER[session.role] || []).filter(canOpen).slice(0, 3);
+        content.addItem(new FlexBox({ justifyContent: "SpaceBetween", alignItems: "End", wrap: "Wrap", items: [
+            new VBox({ items: [
+                new Title({ text: greeting() + (firstName ? ", " + firstName : ""), level: "H1", titleStyle: "H3", wrapping: true }),
+                new Text({ text: (session.role === "None" ? "No role assigned" : roleCfg.title) + "  ·  " + session.plant + "  ·  " +
+                    today.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) }).addStyleClass("retclMuted sapUiTinyMarginTop")
+            ] }),
+            new HBox({ items: quick.map(app => new Button({ text: QUICK[app].text, icon: QUICK[app].icon, type: "Transparent", press: () => go(app) })) })
+        ] }).addStyleClass("retclHeader"));
 
         if (session.role === "None") {
             content.addItem(new MessageStrip({
@@ -433,7 +476,7 @@ sap.ui.define([
         // Key figures
         const kpis = buildKpis(a, canOpen);
         if (kpis.length) {
-            content.addItem(sectionTitle("Key Figures"));
+            content.addItem(sectionTitle("Key Figures", "sap-icon://kpi-managing-my-area", "Live from the system"));
             content.addItem(grid(kpis));
         }
 
@@ -447,14 +490,14 @@ sap.ui.define([
             ] }).addStyleClass("sapUiSmallMarginEnd sapUiSmallMarginBottom");
         }).filter(Boolean);
         if (groupBoxes.length) {
-            content.addItem(sectionTitle("My Apps"));
+            content.addItem(sectionTitle("My Apps", "sap-icon://grid", "Grouped by business area"));
             content.addItem(new FlexBox({ wrap: "Wrap", alignItems: "Start", items: groupBoxes }));
         }
 
         // Insights
         const cards = [fleetCard(a), (attention.length || roleCfg.apps.length) ? attentionCard(attention) : null, activityCard(data.history, canOpen)].filter(Boolean);
         if (cards.length) {
-            content.addItem(sectionTitle("Insights"));
+            content.addItem(sectionTitle("Insights", "sap-icon://business-objects-experience", "What needs a decision"));
             content.addItem(grid(cards));
         }
 
@@ -474,6 +517,10 @@ sap.ui.define([
                 new OverflowToolbarButton({ icon: "sap-icon://refresh", text: "Refresh", tooltip: "Refresh figures", press: () => window.location.reload() })
             ]
         });
+
+        content.addItem(new Text({ text: "Rental Equipment Tracking & Condition Logging · SAP BTP CAP + Fiori · figures as of " +
+            new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) }).addStyleClass("retclFooter"));
+        content.addStyleClass("retclContainer");
 
         const page = new Page({ showHeader: true, customHeader: shell, content: [content] }).addStyleClass("retclLaunchpad sapUiResponsivePadding--header sapUiResponsivePadding--content");
         page.placeAt(mountPoint(), "only");
