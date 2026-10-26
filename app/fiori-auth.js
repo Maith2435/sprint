@@ -672,57 +672,20 @@ window.openEvidencePhotoCaptureDialog = function(options = {}) {
     };
 
     // Enhanced table & model refresh across SAP Fiori Elements
+    // Reload only the photo list of the record on screen. Refreshing every binding / the whole model
+    // re-reads value helps and unsaved drafts, which fails with "Not Found" on a new draft.
     const triggerRefresh = () => {
-        if (window.sap && sap.ui && sap.ui.getCore) {
-            try {
-                const core = sap.ui.getCore();
-                // 1. Refresh all table bindings on all UI5 controls
-                document.querySelectorAll('.sapMList, .sapMTable, .sapUiTable, [data-sap-ui]').forEach(t => {
-                    const ctrl = core.byId(t.id);
-                    if (ctrl) {
-                        if (ctrl.getBinding) {
-                            const b = ctrl.getBinding('items') || ctrl.getBinding('rows');
-                            if (b && b.refresh) {
-                                try { b.refresh(); } catch (e) {}
-                            }
-                        }
-                        if (typeof ctrl.refresh === 'function') {
-                            try { ctrl.refresh(); } catch (e) {}
-                        }
-                    }
-                });
-
-                // 2. Refresh Fiori Elements V4 View binding context
-                document.querySelectorAll('.sapUiXMLView, .sapMPage, .sapUxAPObjectPageLayout').forEach(v => {
-                    const viewCtrl = core.byId(v.id);
-                    if (viewCtrl && viewCtrl.getBindingContext) {
-                        const ctx = viewCtrl.getBindingContext();
-                        if (ctx) {
-                            if (typeof ctx.refresh === 'function') {
-                                try { ctx.refresh(); } catch (e) {}
-                            }
-                            if (typeof ctx.requestSideEffects === 'function') {
-                                try { ctx.requestSideEffects([{ '$NavigationPropertyPath': 'photos' }]); } catch (e) {}
-                            }
-                        }
-                    }
-                });
-
-                // 3. Refresh Root Component Model
-                document.querySelectorAll('[data-sap-ui-component]').forEach(c => {
-                    const comp = core.getComponent(c.id);
-                    if (comp && comp.getModel) {
-                        const m = comp.getModel();
-                        if (m && m.refresh) {
-                            try { m.refresh(); } catch (e) {}
-                        }
-                    }
-                });
-
-                // 4. Publish refresh events
-                core.getEventBus().publish("sap.fe.core", "refreshTable");
-            } catch (e) {}
-        }
+        try {
+            if (!(window.sap && sap.ui && sap.ui.getCore)) return;
+            const core = sap.ui.getCore();
+            const pageEl = document.querySelector('.sapUxAPObjectPageLayout');
+            const page = pageEl && core.byId(pageEl.id);
+            const ctx = page && page.getBindingContext && page.getBindingContext();
+            if (ctx && typeof ctx.requestSideEffects === 'function') {
+                const p = ctx.requestSideEffects([{ $NavigationPropertyPath: 'photos' }]);
+                if (p && p.catch) p.catch(() => {});
+            }
+        } catch (e) {}
     };
 
     // Close Modal
