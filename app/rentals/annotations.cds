@@ -60,6 +60,12 @@ annotate RentalService.Rentals with @(
             $Type: 'UI.ReferenceFacet',
             Label: 'Allocated Equipment Items',
             Target: 'items/@UI.LineItem'
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            ID: 'StatusHistoryFacet',
+            Label: 'Status History',
+            Target: 'statusHistory/@UI.LineItem'
         }
     ],
     UI.FieldGroup #ContractDetails: {
@@ -72,7 +78,8 @@ annotate RentalService.Rentals with @(
     UI.FieldGroup #RentalSchedule: {
         Data: [
             { Value: rentalDate, Label: 'Rental Start Date' },
-            { Value: expectedReturnDate, Label: 'Expected Return Date' }
+            { Value: expectedReturnDate, Label: 'Expected Return Date' },
+            { Value: actualReturnDate, Label: 'Actual Return Date' }
         ]
     }
 );
@@ -92,10 +99,9 @@ annotate RentalService.Rentals with {
     };
     rentalDate         @title: 'Start Date'            @Common.Label: 'Start Date';
     expectedReturnDate @title: 'Expected Return Date'  @Common.Label: 'Expected Return Date';
-    actualReturnDate   @title: 'Actual Return Date'    @Common.Label: 'Actual Return Date' @UI.Hidden: true;
+    actualReturnDate   @title: 'Actual Return Date'    @Common.Label: 'Actual Return Date' @readonly @UI.Hidden: false;
     rentalStatus       @title: 'Contract Status'       @Common.Label: 'Contract Status';
     totalRentalAmount  @title: 'Total Contract Value (₹)' @Common.Label: 'Total Contract Value (₹)';
-    statusHistory      @UI.Hidden: true;
     conditionLogs      @UI.Hidden: true;
 };
 
@@ -107,7 +113,19 @@ annotate RentalService.Customers with {
     address       @title: 'Office / Yard Address'              @Common.Label: 'Office / Yard Address';
 };
 
-annotate RentalService.RentalStatusHistory with @UI.Hidden: true;
+// Rental lifecycle log (FR-008)
+annotate RentalService.RentalStatusHistory with @(
+    UI.LineItem: [
+        { Value: changedAt, Label: 'Changed At' },
+        { Value: oldStatus, Label: 'From Status' },
+        { Value: newStatus, Label: 'To Status' },
+        { Value: changedBy, Label: 'Changed By' }
+    ],
+    UI.PresentationVariant: {
+        SortOrder: [ { Property: changedAt, Descending: true } ],
+        Visualizations: [ '@UI.LineItem' ]
+    }
+);
 
 annotate RentalService.RentalItems with @(
     UI.HeaderInfo: {

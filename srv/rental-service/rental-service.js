@@ -1,5 +1,6 @@
 import cds from '@sap/cds';
 import { exposeBoundActions } from '../common/bound-actions.js';
+import { hidePricesFromYardWorker } from '../common/hide-prices.js';
 
 export default class RentalService extends cds.ApplicationService {
     async init() {
@@ -605,8 +606,8 @@ export default class RentalService extends cds.ApplicationService {
             const { rentalId, actualReturnDate } = req.data;
             const rental = await SELECT.one.from(Rentals).where({ ID: rentalId });
             if (!rental) return req.error(404, `Rental ${rentalId} not found`);
-            if (rental.rentalStatus !== 'Active') {
-                return req.error(400, `Only Active rentals can be checked in. Current status: ${rental.rentalStatus}`);
+            if (rental.rentalStatus !== 'Active' && rental.rentalStatus !== 'Overdue') {
+                return req.error(400, `Only Active or Overdue rentals can be checked in. Current status: ${rental.rentalStatus}`);
             }
 
             const returnDate = actualReturnDate || new Date().toISOString().split('T')[0];
@@ -814,6 +815,21 @@ export default class RentalService extends cds.ApplicationService {
             }
         } catch (e) {}
 
+        // FR-009: flag active contracts past their expected return date as Overdue (checked at most once a minute)
+        let lastOverdueCheck = 0;
+        this.before('READ', 'Rentals', async () => {
+            if (Date.now() - lastOverdueCheck < 60000) return;
+            lastOverdueCheck = Date.now();
+            const today = new Date().toISOString().slice(0, 10);
+            const late = await SELECT.from('RentalEquipmentTrackingApp.Rentals').columns('ID')
+                .where({ rentalStatus: 'Active', expectedReturnDate: { '<': today } });
+            if (!late.length) return;
+            const ids = late.map(r => r.ID);
+            await UPDATE('RentalEquipmentTrackingApp.Rentals').set({ rentalStatus: 'Overdue' }).where({ ID: { in: ids } });
+            await INSERT.into('RentalEquipmentTrackingApp.RentalStatusHistory')
+                .entries(ids.map(id => ({ rental_ID: id, oldStatus: 'Active', newStatus: 'Overdue' })));
+        });
+
         // Workflow buttons on the selected record (forward to the actions above)
         exposeBoundActions(this, 'Rentals', {
             checkOut: ['checkOutRental', 'rentalId'],
@@ -823,6 +839,8 @@ export default class RentalService extends cds.ApplicationService {
         exposeBoundActions(this, 'Equipment', {
             transfer: ['transferEquipment', 'equipmentId']
         });
+
+        hidePricesFromYardWorker(this);
 
         await super.init();
     }

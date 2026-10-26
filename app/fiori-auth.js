@@ -85,6 +85,33 @@ function clearFioriSession() {
     localStorage.removeItem('fiori_user_session');
 }
 
+// The approuter enforces CSRF protection: every POST/PUT/PATCH/DELETE needs an X-CSRF-Token
+// fetched from the approuter first. Locally (no approuter) no token is returned and none is needed.
+let csrfToken = null;
+async function fetchCsrfToken() {
+    try {
+        const res = await fetch('/rental/', { method: 'HEAD', headers: { 'X-CSRF-Token': 'Fetch' }, credentials: 'same-origin' });
+        csrfToken = res.headers.get('X-CSRF-Token');
+    } catch (e) {
+        csrfToken = null;
+    }
+    return csrfToken;
+}
+async function csrfFetch(url, options = {}) {
+    const send = () => fetch(url, {
+        credentials: 'same-origin',
+        ...options,
+        headers: { ...(options.headers || {}), ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) }
+    });
+    if (!csrfToken) await fetchCsrfToken();
+    let res = await send();
+    if (res.status === 403 && (res.headers.get('X-CSRF-Token') || '').toLowerCase() === 'required') {
+        await fetchCsrfToken();
+        res = await send();
+    }
+    return res;
+}
+
 // Highest-privilege role wins when the XSUAA user holds several role collections
 const FIORI_ROLE_PRIORITY = ['Admin', 'Manager', 'Dispatcher', 'BillingClerk', 'Technician', 'YardWorker', 'Auditor'];
 
@@ -221,11 +248,14 @@ function initSubAppGuard(currentAppId, currentAppTitle) {
             return null;
         }
 
+        // Prefetch the CSRF token so the tab-close cleanup below can use it
+        fetchCsrfToken();
+
         async function discardDraftUrl(draftPath) {
             if (!draftPath) return;
             try {
                 const fullUrl = currentServiceRoot + draftPath;
-                await fetch(fullUrl, {
+                await csrfFetch(fullUrl, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -278,9 +308,12 @@ function initSubAppGuard(currentAppId, currentAppTitle) {
         window.addEventListener('beforeunload', function () {
             const currentDraft = getDraftPathFromHash(window.location.hash);
             if (currentDraft) {
+                // Page is closing: no time to fetch a token, so use the one prefetched on load
                 fetch(currentServiceRoot + currentDraft, {
                     method: 'DELETE',
-                    keepalive: true
+                    keepalive: true,
+                    credentials: 'same-origin',
+                    headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
                 }).catch(() => {});
             }
         });
@@ -639,57 +672,20 @@ window.openEvidencePhotoCaptureDialog = function(options = {}) {
     };
 
     // Enhanced table & model refresh across SAP Fiori Elements
+    // Reload only the photo list of the record on screen. Refreshing every binding / the whole model
+    // re-reads value helps and unsaved drafts, which fails with "Not Found" on a new draft.
     const triggerRefresh = () => {
-        if (window.sap && sap.ui && sap.ui.getCore) {
-            try {
-                const core = sap.ui.getCore();
-                // 1. Refresh all table bindings on all UI5 controls
-                document.querySelectorAll('.sapMList, .sapMTable, .sapUiTable, [data-sap-ui]').forEach(t => {
-                    const ctrl = core.byId(t.id);
-                    if (ctrl) {
-                        if (ctrl.getBinding) {
-                            const b = ctrl.getBinding('items') || ctrl.getBinding('rows');
-                            if (b && b.refresh) {
-                                try { b.refresh(); } catch (e) {}
-                            }
-                        }
-                        if (typeof ctrl.refresh === 'function') {
-                            try { ctrl.refresh(); } catch (e) {}
-                        }
-                    }
-                });
-
-                // 2. Refresh Fiori Elements V4 View binding context
-                document.querySelectorAll('.sapUiXMLView, .sapMPage, .sapUxAPObjectPageLayout').forEach(v => {
-                    const viewCtrl = core.byId(v.id);
-                    if (viewCtrl && viewCtrl.getBindingContext) {
-                        const ctx = viewCtrl.getBindingContext();
-                        if (ctx) {
-                            if (typeof ctx.refresh === 'function') {
-                                try { ctx.refresh(); } catch (e) {}
-                            }
-                            if (typeof ctx.requestSideEffects === 'function') {
-                                try { ctx.requestSideEffects([{ '$NavigationPropertyPath': 'photos' }]); } catch (e) {}
-                            }
-                        }
-                    }
-                });
-
-                // 3. Refresh Root Component Model
-                document.querySelectorAll('[data-sap-ui-component]').forEach(c => {
-                    const comp = core.getComponent(c.id);
-                    if (comp && comp.getModel) {
-                        const m = comp.getModel();
-                        if (m && m.refresh) {
-                            try { m.refresh(); } catch (e) {}
-                        }
-                    }
-                });
-
-                // 4. Publish refresh events
-                core.getEventBus().publish("sap.fe.core", "refreshTable");
-            } catch (e) {}
-        }
+        try {
+            if (!(window.sap && sap.ui && sap.ui.getCore)) return;
+            const core = sap.ui.getCore();
+            const pageEl = document.querySelector('.sapUxAPObjectPageLayout');
+            const page = pageEl && core.byId(pageEl.id);
+            const ctx = page && page.getBindingContext && page.getBindingContext();
+            if (ctx && typeof ctx.requestSideEffects === 'function') {
+                const p = ctx.requestSideEffects([{ $NavigationPropertyPath: 'photos' }]);
+                if (p && p.catch) p.catch(() => {});
+            }
+        } catch (e) {}
     };
 
     // Close Modal
@@ -819,16 +815,18 @@ window.openEvidencePhotoCaptureDialog = function(options = {}) {
                 repairBill_ID: isRepairBill ? entityId : (options.repairBill_ID || null),
                 latitude: currentLat,
                 longitude: currentLong,
-                uploadedBy: window.getFioriSession ? window.getFioriSession().user : 'Yard Staff'
+                uploadedBy: (window.getFioriSession && window.getFioriSession() && window.getFioriSession().name) || 'Yard Staff'
             };
 
-            const response = await fetch('/api/upload-evidence', {
+            const response = await csrfFetch('/api/upload-evidence', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            const result = await response.json();
+            const raw = await response.text();
+            let result;
+            try { result = JSON.parse(raw); } catch (e) { result = { error: raw || ('HTTP ' + response.status) }; }
 
             if (!response.ok || !result.success) {
                 throw new Error(result.error || 'Server rejected photo upload');
@@ -836,7 +834,9 @@ window.openEvidencePhotoCaptureDialog = function(options = {}) {
 
             statusBox.style.background = '#e6f6ec';
             statusBox.style.color = '#0d8234';
-            statusBox.innerHTML = `<strong>Upload Successful!</strong><br><a href="${result.photo.mediaUrl}" target="_blank" style="font-size:12px;color:#0070f2;word-break:break-all;">View Uploaded Photo ↗</a>`;
+            statusBox.innerHTML = result.photo.mediaUrl
+                ? `<strong>Upload Successful!</strong><br><a href="${result.photo.mediaUrl}" target="_blank" style="font-size:12px;color:#0070f2;word-break:break-all;">View Uploaded Photo ↗</a>`
+                : `<strong>Evidence recorded.</strong><br><span style="font-size:12px;">SHA-256 hash saved. Image hosting (Cloudinary) is not configured, so no preview is stored.</span>`;
             uploadBtn.style.display = 'none';
 
             // Show Close button

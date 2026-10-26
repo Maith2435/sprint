@@ -65,6 +65,9 @@ cds.on('bootstrap', (app) => {
             // 2. Determine if parent entity is an active Draft or an Active entity
             const db = await cds.connect.to('db');
             const photoId = cds.utils.uuid();
+            // Insert through CAP's draft entity so values (e.g. booleans) are converted for the database in use;
+            // the raw *_drafts table name works on HANA but fails on SQLite
+            const draftEntity = (name) => (cds.model.definitions[name] && cds.model.definitions[name].drafts) || name + '_drafts';
             const formatHanaTimestamp = (d) => (d ? new Date(d) : new Date()).toISOString().slice(0, 19).replace('T', ' ');
 
             const photoRecord = {
@@ -112,7 +115,7 @@ cds.on('bootstrap', (app) => {
                             HasDraftEntity: false,
                             DraftAdministrativeData_DraftUUID: draftUUID
                         };
-                        await db.run(INSERT.into('BillingService.DamagePhotos_drafts').entries(draftEntry))
+                        await db.run(INSERT.into(draftEntity('BillingService.DamagePhotos')).entries(draftEntry))
                             .catch(e => console.warn('[Draft Sync Warning RepairBills]', e.message));
 
                         console.log(`[API /api/upload-evidence] ✅ Successfully synced photo ${photoId} to BillingService.DamagePhotos_drafts`);
@@ -123,7 +126,7 @@ cds.on('bootstrap', (app) => {
                     const logUUID = logDraft ? (logDraft.DraftAdministrativeData_DraftUUID || logDraft.DRAFTADMINISTRATIVEDATA_DRAFTUUID) : null;
                     if (logDraft && logUUID) {
                         isDraft = true;
-                        await db.run(INSERT.into('InspectionService.DamagePhotos_drafts').entries({
+                        await db.run(INSERT.into(draftEntity('InspectionService.DamagePhotos')).entries({
                             ID: photoId,
                             conditionLog_ID: conditionLog_ID,
                             repairBill_ID: null,
@@ -152,7 +155,7 @@ cds.on('bootstrap', (app) => {
                     const damageUUID = damageDraft ? (damageDraft.DraftAdministrativeData_DraftUUID || damageDraft.DRAFTADMINISTRATIVEDATA_DRAFTUUID) : null;
                     if (damageDraft && damageUUID) {
                         isDraft = true;
-                        await db.run(INSERT.into('InspectionService.DamagePhotos_drafts').entries({
+                        await db.run(INSERT.into(draftEntity('InspectionService.DamagePhotos')).entries({
                             ID: photoId,
                             damage_ID: damage_ID,
                             conditionLog_ID: null,

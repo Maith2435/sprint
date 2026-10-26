@@ -17,6 +17,7 @@ annotate BillingService.RepairBills with @(
         rental_ID
     ],
     UI.LineItem: [
+        { $Type: 'UI.DataFieldForAction', Action: 'BillingService.EntityContainer/calculateDamageCharge', Label: 'Generate Charge from Damage' },
         { Value: invoiceNo, Label: 'Invoice / Doc Ref' },
         { Value: customer.companyName, Label: 'Customer' },
         { Value: rental.contractNo, Label: 'Contract No' },

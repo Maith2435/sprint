@@ -15,6 +15,9 @@ annotate InspectionService.ContractEquipment with @(
 );
 
 annotate InspectionService.ConditionLogs with @(
+    // Locked (immutable) inspections cannot be edited or deleted, so don't offer it
+    UI.UpdateHidden: locked,
+    UI.DeleteHidden: locked,
     UI.HeaderInfo: {
         TypeName: 'Inspection Log',
         TypeNamePlural: 'Condition Logs & Inspections',

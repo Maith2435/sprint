@@ -136,6 +136,24 @@ service RentalService {
     ]
     entity AssetStatusHistory as projection on my.AssetStatusHistory;
 
+    // Read-only inspection and repair history for the asset detail page (FR-014)
+    @readonly
+    @restrict: [
+        { grant: ['READ'], to: ['Dispatcher', 'YardWorker', 'Technician', 'Manager', 'Admin', 'Auditor'] }
+    ]
+    entity ConditionLogs as projection on my.ConditionLogs {
+        key ID, equipment, rental, inspectionDate, inspectionType, conditionGrade,
+        inspectionStatus, inspector, meterReading, notes
+    };
+
+    @readonly
+    @restrict: [
+        { grant: ['READ'], to: ['Dispatcher', 'YardWorker', 'Technician', 'Manager', 'Admin', 'Auditor'] }
+    ]
+    entity RepairJobs as projection on my.RepairJobs {
+        key ID, equipment, technician, labourHours, actualCost, repairDetails, status, closedAt
+    };
+
     @readonly
     @restrict: [
         { grant: ['READ'], to: ['Dispatcher', 'YardWorker', 'Manager', 'Admin', 'Auditor', 'Technician', 'BillingClerk'] }

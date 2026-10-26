@@ -103,6 +103,30 @@ annotate RentalService.Equipment with @(
                     Target: '@UI.FieldGroup#LocationTelematics'
                 }
             ]
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            ID: 'InspectionsFacet',
+            Label: 'Inspections',
+            Target: 'conditionLogs/@UI.LineItem'
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            ID: 'RepairsFacet',
+            Label: 'Repairs',
+            Target: 'repairJobs/@UI.LineItem'
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            ID: 'StatusTimelineFacet',
+            Label: 'Status Timeline',
+            Target: 'statusHistory/@UI.LineItem'
+        },
+        {
+            $Type: 'UI.ReferenceFacet',
+            ID: 'LocationHistoryFacet',
+            Label: 'Location History',
+            Target: 'transfers/@UI.LineItem'
         }
     ],
     UI.FieldGroup #TechSpecs: {
@@ -173,4 +197,40 @@ annotate RentalService.AssetStatusHistory with @(
         { Value: changedBy, Label: 'Changed By' },
         { Value: reason, Label: 'Audit Reason' }
     ]
+);
+
+// Inspection and repair history on the asset detail page (FR-014)
+annotate RentalService.ConditionLogs with @(
+    UI.LineItem: [
+        { Value: inspectionDate, Label: 'Inspection Date' },
+        { Value: inspectionType, Label: 'Type' },
+        {
+            Value: conditionGrade,
+            Label: 'Grade',
+            Criticality: (conditionGrade = 'A' ? 3 : conditionGrade = 'B' ? 2 : conditionGrade = 'C' ? 2 : 1)
+        },
+        { Value: meterReading, Label: 'Meter (Hours)' },
+        { Value: inspector, Label: 'Inspector' },
+        { Value: inspectionStatus, Label: 'Review State' },
+        { Value: notes, Label: 'Notes' }
+    ],
+    UI.PresentationVariant: {
+        SortOrder: [ { Property: inspectionDate, Descending: true } ],
+        Visualizations: [ '@UI.LineItem' ]
+    }
+);
+
+annotate RentalService.RepairJobs with @(
+    UI.LineItem: [
+        { Value: closedAt, Label: 'Completed At' },
+        { Value: technician, Label: 'Technician' },
+        { Value: status, Label: 'Status' },
+        { Value: labourHours, Label: 'Labour Hours' },
+        { Value: actualCost, Label: 'Actual Cost (₹)' },
+        { Value: repairDetails, Label: 'Work Performed' }
+    ],
+    UI.PresentationVariant: {
+        SortOrder: [ { Property: closedAt, Descending: true } ],
+        Visualizations: [ '@UI.LineItem' ]
+    }
 );
